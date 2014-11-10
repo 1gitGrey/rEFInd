@@ -1,0 +1,29 @@
+--- VBoxFsDxe/fsw_ext4.c	(revision 1056)
++++ VBoxFsDxe/fsw_ext4.c	(working copy)
+@@ -403,7 +403,7 @@
+   buffer = (void *)dno->raw->i_block;
+   buf_offset = 0;
+   while(1) {
+-    ext4_extent_header = (struct ext4_extent_header *)buffer + buf_offset;
++    ext4_extent_header = (struct ext4_extent_header *)((char *)buffer + buf_offset);
+     buf_offset += sizeof(struct ext4_extent_header);
+  //   FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext4_get_by_extent: extent header with %d entries\n"),
+  //                  ext4_extent_header->eh_entries));
+@@ -415,7 +415,7 @@
+       if(ext4_extent_header->eh_depth == 0)
+       {
+         // Leaf node, the header follows actual extents
+-        ext4_extent = (struct ext4_extent *)(buffer + buf_offset);
++        ext4_extent = (struct ext4_extent *)((char *)buffer + buf_offset);
+         buf_offset += sizeof(struct ext4_extent);
+  //       FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext4_get_by_extent: extent node cover %d...\n"), ext4_extent->ee_block));
+         
+@@ -431,7 +431,7 @@
+       {
+   //      FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext4_get_by_extent: index extents, depth %d\n"),
+   //                     ext4_extent_header->eh_depth));
+-        ext4_extent_idx = (struct ext4_extent_idx *)(buffer + buf_offset);
++        ext4_extent_idx = (struct ext4_extent_idx *)((char *)buffer + buf_offset);
+         buf_offset += sizeof(struct ext4_extent_idx);
+         
+  //       FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext4_get_by_extent: index node covers block %d...\n"),
