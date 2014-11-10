@@ -1,0 +1,1638 @@
+
+fsw_ext2.obj:     file format elf32-i386
+
+
+Disassembly of section .text.fsw_ext2_volume_stat:
+
+00000000 <fsw_ext2_volume_stat>:
+/**
+ * Get in-depth information on a volume.
+ */
+
+static fsw_status_t fsw_ext2_volume_stat(struct fsw_ext2_volume *vol, struct fsw_volume_stat *sb)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	8b 4d 08             	mov    0x8(%ebp),%ecx
+   6:	53                   	push   %ebx
+   7:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+    sb->total_bytes = (fsw_u64)vol->sb->s_blocks_count      * vol->g.log_blocksize;
+   a:	8b 51 38             	mov    0x38(%ecx),%edx
+   d:	8b 41 04             	mov    0x4(%ecx),%eax
+  10:	f7 62 04             	mull   0x4(%edx)
+  13:	89 03                	mov    %eax,(%ebx)
+  15:	89 53 04             	mov    %edx,0x4(%ebx)
+    sb->free_bytes  = (fsw_u64)vol->sb->s_free_blocks_count * vol->g.log_blocksize;
+  18:	8b 51 38             	mov    0x38(%ecx),%edx
+  1b:	8b 41 04             	mov    0x4(%ecx),%eax
+  1e:	f7 62 0c             	mull   0xc(%edx)
+  21:	89 43 08             	mov    %eax,0x8(%ebx)
+    return FSW_SUCCESS;
+}
+  24:	31 c0                	xor    %eax,%eax
+ */
+
+static fsw_status_t fsw_ext2_volume_stat(struct fsw_ext2_volume *vol, struct fsw_volume_stat *sb)
+{
+    sb->total_bytes = (fsw_u64)vol->sb->s_blocks_count      * vol->g.log_blocksize;
+    sb->free_bytes  = (fsw_u64)vol->sb->s_free_blocks_count * vol->g.log_blocksize;
+  26:	89 53 0c             	mov    %edx,0xc(%ebx)
+    return FSW_SUCCESS;
+}
+  29:	5b                   	pop    %ebx
+  2a:	5d                   	pop    %ebp
+  2b:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_dnode_stat:
+
+00000000 <fsw_ext2_dnode_stat>:
+ * callback that converts it to the host-specific format.
+ */
+
+static fsw_status_t fsw_ext2_dnode_stat(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                        struct fsw_dnode_stat *sb)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	56                   	push   %esi
+   4:	8b 75 0c             	mov    0xc(%ebp),%esi
+   7:	53                   	push   %ebx
+   8:	8b 5d 10             	mov    0x10(%ebp),%ebx
+    sb->used_bytes = dno->raw->i_blocks * 512;   // very, very strange...
+   b:	8b 46 48             	mov    0x48(%esi),%eax
+   e:	8b 40 1c             	mov    0x1c(%eax),%eax
+  11:	c7 43 04 00 00 00 00 	movl   $0x0,0x4(%ebx)
+  18:	c1 e0 09             	shl    $0x9,%eax
+  1b:	89 03                	mov    %eax,(%ebx)
+    sb->store_time_posix(sb, FSW_DNODE_STAT_CTIME, dno->raw->i_ctime);
+  1d:	50                   	push   %eax
+  1e:	8b 46 48             	mov    0x48(%esi),%eax
+  21:	ff 70 0c             	pushl  0xc(%eax)
+  24:	6a 00                	push   $0x0
+  26:	53                   	push   %ebx
+  27:	ff 53 08             	call   *0x8(%ebx)
+    sb->store_time_posix(sb, FSW_DNODE_STAT_ATIME, dno->raw->i_atime);
+  2a:	8b 46 48             	mov    0x48(%esi),%eax
+  2d:	83 c4 0c             	add    $0xc,%esp
+  30:	ff 70 08             	pushl  0x8(%eax)
+  33:	6a 02                	push   $0x2
+  35:	53                   	push   %ebx
+  36:	ff 53 08             	call   *0x8(%ebx)
+    sb->store_time_posix(sb, FSW_DNODE_STAT_MTIME, dno->raw->i_mtime);
+  39:	8b 46 48             	mov    0x48(%esi),%eax
+  3c:	83 c4 0c             	add    $0xc,%esp
+  3f:	ff 70 10             	pushl  0x10(%eax)
+  42:	6a 01                	push   $0x1
+  44:	53                   	push   %ebx
+  45:	ff 53 08             	call   *0x8(%ebx)
+    sb->store_attr_posix(sb, dno->raw->i_mode);
+  48:	8b 46 48             	mov    0x48(%esi),%eax
+  4b:	5a                   	pop    %edx
+  4c:	59                   	pop    %ecx
+  4d:	0f b7 00             	movzwl (%eax),%eax
+  50:	50                   	push   %eax
+  51:	53                   	push   %ebx
+  52:	ff 53 0c             	call   *0xc(%ebx)
+
+    return FSW_SUCCESS;
+}
+  55:	8d 65 f8             	lea    -0x8(%ebp),%esp
+  58:	31 c0                	xor    %eax,%eax
+  5a:	5b                   	pop    %ebx
+  5b:	5e                   	pop    %esi
+  5c:	5d                   	pop    %ebp
+  5d:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_read_dentry:
+
+00000000 <fsw_ext2_read_dentry>:
+ * to read a raw ext2 directory entry into memory. The shandle's position pointer is adjusted
+ * to point to the next entry.
+ */
+
+static fsw_status_t fsw_ext2_read_dentry(struct fsw_shandle *shand, struct ext2_dir_entry *entry)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	57                   	push   %edi
+   4:	56                   	push   %esi
+   5:	89 d6                	mov    %edx,%esi
+   7:	53                   	push   %ebx
+   8:	89 c3                	mov    %eax,%ebx
+   a:	83 ec 2c             	sub    $0x2c,%esp
+    fsw_u32         buffer_size;
+
+    while (1) {
+        // read dir_entry header (fixed length)
+        buffer_size = 8;
+        status = fsw_shandle_read(shand, &buffer_size, entry);
+   d:	8d 7d e4             	lea    -0x1c(%ebp),%edi
+  10:	50                   	push   %eax
+  11:	56                   	push   %esi
+  12:	57                   	push   %edi
+  13:	53                   	push   %ebx
+    fsw_status_t    status;
+    fsw_u32         buffer_size;
+
+    while (1) {
+        // read dir_entry header (fixed length)
+        buffer_size = 8;
+  14:	c7 45 e4 08 00 00 00 	movl   $0x8,-0x1c(%ebp)
+        status = fsw_shandle_read(shand, &buffer_size, entry);
+  1b:	e8 fc ff ff ff       	call   1c <fsw_ext2_read_dentry+0x1c>
+        if (status)
+  20:	83 c4 10             	add    $0x10,%esp
+  23:	85 c0                	test   %eax,%eax
+    fsw_u32         buffer_size;
+
+    while (1) {
+        // read dir_entry header (fixed length)
+        buffer_size = 8;
+        status = fsw_shandle_read(shand, &buffer_size, entry);
+  25:	89 c2                	mov    %eax,%edx
+        if (status)
+  27:	0f 85 82 00 00 00    	jne    af <fsw_ext2_read_dentry+0xaf>
+            return status;
+
+        if (buffer_size < 8 || entry->rec_len == 0) {
+  2d:	83 7d e4 07          	cmpl   $0x7,-0x1c(%ebp)
+  31:	76 08                	jbe    3b <fsw_ext2_read_dentry+0x3b>
+  33:	8b 46 04             	mov    0x4(%esi),%eax
+  36:	66 85 c0             	test   %ax,%ax
+  39:	75 08                	jne    43 <fsw_ext2_read_dentry+0x43>
+            // end of directory reached
+            entry->inode = 0;
+  3b:	c7 06 00 00 00 00    	movl   $0x0,(%esi)
+            return FSW_SUCCESS;
+  41:	eb 6c                	jmp    af <fsw_ext2_read_dentry+0xaf>
+        }
+        if (entry->rec_len < 8)
+  43:	66 83 f8 07          	cmp    $0x7,%ax
+  47:	76 61                	jbe    aa <fsw_ext2_read_dentry+0xaa>
+            return FSW_VOLUME_CORRUPTED;
+        if (entry->inode != 0) {
+  49:	83 3e 00             	cmpl   $0x0,(%esi)
+  4c:	0f b7 c0             	movzwl %ax,%eax
+  4f:	74 16                	je     67 <fsw_ext2_read_dentry+0x67>
+            // this entry is used
+            if (entry->rec_len < 8 + entry->name_len)
+  51:	0f b6 4e 06          	movzbl 0x6(%esi),%ecx
+  55:	8d 51 07             	lea    0x7(%ecx),%edx
+  58:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+                return FSW_VOLUME_CORRUPTED;
+  5b:	ba 05 00 00 00       	mov    $0x5,%edx
+        }
+        if (entry->rec_len < 8)
+            return FSW_VOLUME_CORRUPTED;
+        if (entry->inode != 0) {
+            // this entry is used
+            if (entry->rec_len < 8 + entry->name_len)
+  60:	39 45 d4             	cmp    %eax,-0x2c(%ebp)
+  63:	7d 4a                	jge    af <fsw_ext2_read_dentry+0xaf>
+  65:	eb 0c                	jmp    73 <fsw_ext2_read_dentry+0x73>
+                return FSW_VOLUME_CORRUPTED;
+            break;
+        }
+
+        // valid, but unused entry, skip it
+        shand->pos += entry->rec_len - 8;
+  67:	83 e8 08             	sub    $0x8,%eax
+  6a:	99                   	cltd   
+  6b:	01 43 08             	add    %eax,0x8(%ebx)
+  6e:	11 53 0c             	adc    %edx,0xc(%ebx)
+    }
+  71:	eb 9d                	jmp    10 <fsw_ext2_read_dentry+0x10>
+
+    // read file name (variable length)
+    buffer_size = entry->name_len;
+    status = fsw_shandle_read(shand, &buffer_size, entry->name);
+  73:	50                   	push   %eax
+  74:	8d 46 08             	lea    0x8(%esi),%eax
+  77:	50                   	push   %eax
+  78:	57                   	push   %edi
+  79:	53                   	push   %ebx
+        // valid, but unused entry, skip it
+        shand->pos += entry->rec_len - 8;
+    }
+
+    // read file name (variable length)
+    buffer_size = entry->name_len;
+  7a:	89 4d e4             	mov    %ecx,-0x1c(%ebp)
+    status = fsw_shandle_read(shand, &buffer_size, entry->name);
+  7d:	e8 fc ff ff ff       	call   7e <fsw_ext2_read_dentry+0x7e>
+    if (status)
+  82:	83 c4 10             	add    $0x10,%esp
+  85:	85 c0                	test   %eax,%eax
+        shand->pos += entry->rec_len - 8;
+    }
+
+    // read file name (variable length)
+    buffer_size = entry->name_len;
+    status = fsw_shandle_read(shand, &buffer_size, entry->name);
+  87:	89 c2                	mov    %eax,%edx
+    if (status)
+  89:	75 24                	jne    af <fsw_ext2_read_dentry+0xaf>
+        return status;
+    if (buffer_size < entry->name_len)
+  8b:	0f b6 4e 06          	movzbl 0x6(%esi),%ecx
+  8f:	39 4d e4             	cmp    %ecx,-0x1c(%ebp)
+  92:	72 16                	jb     aa <fsw_ext2_read_dentry+0xaa>
+        return FSW_VOLUME_CORRUPTED;
+
+    // skip any remaining padding
+    shand->pos += entry->rec_len - (8 + entry->name_len);
+  94:	0f b7 46 04          	movzwl 0x4(%esi),%eax
+  98:	29 c8                	sub    %ecx,%eax
+  9a:	8d 70 f8             	lea    -0x8(%eax),%esi
+  9d:	89 f7                	mov    %esi,%edi
+  9f:	c1 ff 1f             	sar    $0x1f,%edi
+  a2:	01 73 08             	add    %esi,0x8(%ebx)
+  a5:	11 7b 0c             	adc    %edi,0xc(%ebx)
+
+    return FSW_SUCCESS;
+  a8:	eb 05                	jmp    af <fsw_ext2_read_dentry+0xaf>
+    buffer_size = entry->name_len;
+    status = fsw_shandle_read(shand, &buffer_size, entry->name);
+    if (status)
+        return status;
+    if (buffer_size < entry->name_len)
+        return FSW_VOLUME_CORRUPTED;
+  aa:	ba 05 00 00 00       	mov    $0x5,%edx
+
+    // skip any remaining padding
+    shand->pos += entry->rec_len - (8 + entry->name_len);
+
+    return FSW_SUCCESS;
+}
+  af:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  b2:	89 d0                	mov    %edx,%eax
+  b4:	5b                   	pop    %ebx
+  b5:	5e                   	pop    %esi
+  b6:	5f                   	pop    %edi
+  b7:	5d                   	pop    %ebp
+  b8:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_dir_read:
+
+00000000 <fsw_ext2_dir_read>:
+ * record the position in the directory between calls.
+ */
+
+static fsw_status_t fsw_ext2_dir_read(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                      struct fsw_shandle *shand, struct fsw_ext2_dnode **child_dno_out)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	53                   	push   %ebx
+   4:	81 ec 24 01 00 00    	sub    $0x124,%esp
+   a:	8b 5d 10             	mov    0x10(%ebp),%ebx
+    //  has opened a storage handle to the directory's storage and keeps it around between
+    //  calls.
+
+    while (1) {
+        // read next entry
+        status = fsw_ext2_read_dentry(shand, &entry);
+   d:	8d 95 e0 fe ff ff    	lea    -0x120(%ebp),%edx
+  13:	89 d8                	mov    %ebx,%eax
+  15:	e8 fc ff ff ff       	call   16 <fsw_ext2_dir_read+0x16>
+        if (status)
+  1a:	85 c0                	test   %eax,%eax
+  1c:	75 68                	jne    86 <fsw_ext2_dir_read+0x86>
+            return status;
+        if (entry.inode == 0)   // end of directory
+  1e:	8b 95 e0 fe ff ff    	mov    -0x120(%ebp),%edx
+  24:	85 d2                	test   %edx,%edx
+  26:	74 59                	je     81 <fsw_ext2_dir_read+0x81>
+            return FSW_NOT_FOUND;
+
+        // skip . and ..
+        if ((entry.name_len == 1 && entry.name[0] == '.') ||
+  28:	8a 85 e6 fe ff ff    	mov    -0x11a(%ebp),%al
+  2e:	3c 01                	cmp    $0x1,%al
+  30:	75 09                	jne    3b <fsw_ext2_dir_read+0x3b>
+  32:	80 bd e8 fe ff ff 2e 	cmpb   $0x2e,-0x118(%ebp)
+  39:	eb 0d                	jmp    48 <fsw_ext2_dir_read+0x48>
+  3b:	3c 02                	cmp    $0x2,%al
+  3d:	75 0b                	jne    4a <fsw_ext2_dir_read+0x4a>
+            (entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.'))
+  3f:	66 81 bd e8 fe ff ff 	cmpw   $0x2e2e,-0x118(%ebp)
+  46:	2e 2e 
+  48:	74 c3                	je     d <fsw_ext2_dir_read+0xd>
+        break;
+    }
+
+    // setup name
+    entry_name.type = FSW_STRING_TYPE_ISO88591;
+    entry_name.len = entry_name.size = entry.name_len;
+  4a:	0f b6 c0             	movzbl %al,%eax
+  4d:	89 45 f0             	mov    %eax,-0x10(%ebp)
+  50:	89 45 ec             	mov    %eax,-0x14(%ebp)
+    entry_name.data = entry.name;
+  53:	8d 85 e8 fe ff ff    	lea    -0x118(%ebp),%eax
+  59:	89 45 f4             	mov    %eax,-0xc(%ebp)
+
+    // setup a dnode for the child item
+    status = fsw_dnode_create(dno, entry.inode, FSW_DNODE_TYPE_UNKNOWN, &entry_name, child_dno_out);
+  5c:	50                   	push   %eax
+  5d:	50                   	push   %eax
+  5e:	ff 75 14             	pushl  0x14(%ebp)
+  61:	8d 45 e8             	lea    -0x18(%ebp),%eax
+            continue;
+        break;
+    }
+
+    // setup name
+    entry_name.type = FSW_STRING_TYPE_ISO88591;
+  64:	c7 45 e8 01 00 00 00 	movl   $0x1,-0x18(%ebp)
+    entry_name.len = entry_name.size = entry.name_len;
+    entry_name.data = entry.name;
+
+    // setup a dnode for the child item
+    status = fsw_dnode_create(dno, entry.inode, FSW_DNODE_TYPE_UNKNOWN, &entry_name, child_dno_out);
+  6b:	50                   	push   %eax
+  6c:	89 d0                	mov    %edx,%eax
+  6e:	6a 00                	push   $0x0
+  70:	31 d2                	xor    %edx,%edx
+  72:	52                   	push   %edx
+  73:	50                   	push   %eax
+  74:	ff 75 0c             	pushl  0xc(%ebp)
+  77:	e8 fc ff ff ff       	call   78 <fsw_ext2_dir_read+0x78>
+
+    return status;
+  7c:	83 c4 20             	add    $0x20,%esp
+  7f:	eb 05                	jmp    86 <fsw_ext2_dir_read+0x86>
+        // read next entry
+        status = fsw_ext2_read_dentry(shand, &entry);
+        if (status)
+            return status;
+        if (entry.inode == 0)   // end of directory
+            return FSW_NOT_FOUND;
+  81:	b8 04 00 00 00       	mov    $0x4,%eax
+
+    // setup a dnode for the child item
+    status = fsw_dnode_create(dno, entry.inode, FSW_DNODE_TYPE_UNKNOWN, &entry_name, child_dno_out);
+
+    return status;
+}
+  86:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+  89:	c9                   	leave  
+  8a:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_dir_lookup:
+
+00000000 <fsw_ext2_dir_lookup>:
+ * and the dnode is actually a directory.
+ */
+
+static fsw_status_t fsw_ext2_dir_lookup(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                        struct fsw_string *lookup_name, struct fsw_ext2_dnode **child_dno_out)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	57                   	push   %edi
+   4:	56                   	push   %esi
+   5:	53                   	push   %ebx
+   6:	81 ec 64 01 00 00    	sub    $0x164,%esp
+   c:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+    // Preconditions: The caller has checked that dno is a directory node.
+
+    entry_name.type = FSW_STRING_TYPE_ISO88591;
+
+    // setup handle to read the directory
+    status = fsw_shandle_open(dno, &shand);
+   f:	8d 75 b0             	lea    -0x50(%ebp),%esi
+ * and the dnode is actually a directory.
+ */
+
+static fsw_status_t fsw_ext2_dir_lookup(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                        struct fsw_string *lookup_name, struct fsw_ext2_dnode **child_dno_out)
+{
+  12:	8b 7d 10             	mov    0x10(%ebp),%edi
+    // Preconditions: The caller has checked that dno is a directory node.
+
+    entry_name.type = FSW_STRING_TYPE_ISO88591;
+
+    // setup handle to read the directory
+    status = fsw_shandle_open(dno, &shand);
+  15:	56                   	push   %esi
+  16:	53                   	push   %ebx
+    struct ext2_dir_entry entry;
+    struct fsw_string entry_name;
+
+    // Preconditions: The caller has checked that dno is a directory node.
+
+    entry_name.type = FSW_STRING_TYPE_ISO88591;
+  17:	c7 45 d8 01 00 00 00 	movl   $0x1,-0x28(%ebp)
+
+    // setup handle to read the directory
+    status = fsw_shandle_open(dno, &shand);
+  1e:	e8 fc ff ff ff       	call   1f <fsw_ext2_dir_lookup+0x1f>
+    if (status)
+  23:	83 c4 10             	add    $0x10,%esp
+  26:	85 c0                	test   %eax,%eax
+  28:	74 60                	je     8a <fsw_ext2_dir_lookup+0x8a>
+  2a:	e9 8e 00 00 00       	jmp    bd <fsw_ext2_dir_lookup+0xbd>
+    while (child_ino == 0) {
+        // read next entry
+        status = fsw_ext2_read_dentry(&shand, &entry);
+        if (status)
+            goto errorexit;
+        if (entry.inode == 0) {
+  2f:	83 bd a8 fe ff ff 00 	cmpl   $0x0,-0x158(%ebp)
+  36:	74 65                	je     9d <fsw_ext2_dir_lookup+0x9d>
+            status = FSW_NOT_FOUND;
+            goto errorexit;
+        }
+
+        // compare name
+        entry_name.len = entry_name.size = entry.name_len;
+  38:	0f b6 85 ae fe ff ff 	movzbl -0x152(%ebp),%eax
+        entry_name.data = entry.name;
+        if (fsw_streq(lookup_name, &entry_name)) {
+  3f:	8d 55 d8             	lea    -0x28(%ebp),%edx
+  42:	89 95 a4 fe ff ff    	mov    %edx,-0x15c(%ebp)
+            status = FSW_NOT_FOUND;
+            goto errorexit;
+        }
+
+        // compare name
+        entry_name.len = entry_name.size = entry.name_len;
+  48:	89 45 e0             	mov    %eax,-0x20(%ebp)
+  4b:	89 45 dc             	mov    %eax,-0x24(%ebp)
+        entry_name.data = entry.name;
+  4e:	8d 85 b0 fe ff ff    	lea    -0x150(%ebp),%eax
+  54:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+        if (fsw_streq(lookup_name, &entry_name)) {
+  57:	50                   	push   %eax
+  58:	50                   	push   %eax
+  59:	52                   	push   %edx
+  5a:	57                   	push   %edi
+  5b:	e8 fc ff ff ff       	call   5c <fsw_ext2_dir_lookup+0x5c>
+  60:	83 c4 10             	add    $0x10,%esp
+  63:	8b 95 a4 fe ff ff    	mov    -0x15c(%ebp),%edx
+  69:	85 c0                	test   %eax,%eax
+  6b:	74 1d                	je     8a <fsw_ext2_dir_lookup+0x8a>
+            break;
+        }
+    }
+
+    // setup a dnode for the child item
+    status = fsw_dnode_create(dno, child_ino, FSW_DNODE_TYPE_UNKNOWN, &entry_name, child_dno_out);
+  6d:	50                   	push   %eax
+  6e:	50                   	push   %eax
+  6f:	8b 85 a8 fe ff ff    	mov    -0x158(%ebp),%eax
+  75:	ff 75 14             	pushl  0x14(%ebp)
+  78:	52                   	push   %edx
+  79:	31 d2                	xor    %edx,%edx
+  7b:	6a 00                	push   $0x0
+  7d:	52                   	push   %edx
+  7e:	50                   	push   %eax
+  7f:	53                   	push   %ebx
+  80:	e8 fc ff ff ff       	call   81 <fsw_ext2_dir_lookup+0x81>
+  85:	83 c4 20             	add    $0x20,%esp
+  88:	eb 18                	jmp    a2 <fsw_ext2_dir_lookup+0xa2>
+
+    // scan the directory for the file
+    child_ino = 0;
+    while (child_ino == 0) {
+        // read next entry
+        status = fsw_ext2_read_dentry(&shand, &entry);
+  8a:	8d 95 a8 fe ff ff    	lea    -0x158(%ebp),%edx
+  90:	89 f0                	mov    %esi,%eax
+  92:	e8 fc ff ff ff       	call   93 <fsw_ext2_dir_lookup+0x93>
+        if (status)
+  97:	85 c0                	test   %eax,%eax
+  99:	74 94                	je     2f <fsw_ext2_dir_lookup+0x2f>
+  9b:	eb 05                	jmp    a2 <fsw_ext2_dir_lookup+0xa2>
+            goto errorexit;
+        if (entry.inode == 0) {
+            // end of directory reached
+            status = FSW_NOT_FOUND;
+  9d:	b8 04 00 00 00       	mov    $0x4,%eax
+
+    // setup a dnode for the child item
+    status = fsw_dnode_create(dno, child_ino, FSW_DNODE_TYPE_UNKNOWN, &entry_name, child_dno_out);
+
+errorexit:
+    fsw_shandle_close(&shand);
+  a2:	83 ec 0c             	sub    $0xc,%esp
+  a5:	8d 55 b0             	lea    -0x50(%ebp),%edx
+  a8:	52                   	push   %edx
+  a9:	89 85 a4 fe ff ff    	mov    %eax,-0x15c(%ebp)
+  af:	e8 fc ff ff ff       	call   b0 <fsw_ext2_dir_lookup+0xb0>
+    return status;
+  b4:	8b 85 a4 fe ff ff    	mov    -0x15c(%ebp),%eax
+  ba:	83 c4 10             	add    $0x10,%esp
+}
+  bd:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  c0:	5b                   	pop    %ebx
+  c1:	5e                   	pop    %esi
+  c2:	5f                   	pop    %edi
+  c3:	5d                   	pop    %ebp
+  c4:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_get_extent:
+
+00000000 <fsw_ext2_get_extent>:
+ * to consecutive disk blocks and returns a combined extent if possible.
+ */
+
+static fsw_status_t fsw_ext2_get_extent(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                        struct fsw_extent *extent)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	57                   	push   %edi
+   4:	56                   	push   %esi
+   5:	53                   	push   %ebx
+   6:	83 ec 4c             	sub    $0x4c,%esp
+   9:	8b 75 10             	mov    0x10(%ebp),%esi
+   c:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    //  is within the file's size. The dnode has complete information, i.e.
+    //  fsw_ext2_dnode_read_info was called successfully on it.
+
+    extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
+    extent->log_count = 1;
+    bno = extent->log_start;
+   f:	8b 46 04             	mov    0x4(%esi),%eax
+
+    // Preconditions: The caller has checked that the requested logical block
+    //  is within the file's size. The dnode has complete information, i.e.
+    //  fsw_ext2_dnode_read_info was called successfully on it.
+
+    extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
+  12:	c7 06 02 00 00 00    	movl   $0x2,(%esi)
+    extent->log_count = 1;
+  18:	c7 46 08 01 00 00 00 	movl   $0x1,0x8(%esi)
+    bno = extent->log_start;
+
+    // try direct block pointers in the inode
+    if (bno < EXT2_NDIR_BLOCKS) {
+  1f:	83 f8 0b             	cmp    $0xb,%eax
+  22:	77 0c                	ja     30 <fsw_ext2_get_extent+0x30>
+        path[0] = bno;
+  24:	89 45 d0             	mov    %eax,-0x30(%ebp)
+        path[1] = -1;
+  27:	c7 45 d4 ff ff ff ff 	movl   $0xffffffff,-0x2c(%ebp)
+  2e:	eb 6d                	jmp    9d <fsw_ext2_get_extent+0x9d>
+    } else {
+        bno -= EXT2_NDIR_BLOCKS;
+
+        // try indirect block
+        if (bno < vol->ind_bcnt) {
+  30:	8b 4b 40             	mov    0x40(%ebx),%ecx
+    // try direct block pointers in the inode
+    if (bno < EXT2_NDIR_BLOCKS) {
+        path[0] = bno;
+        path[1] = -1;
+    } else {
+        bno -= EXT2_NDIR_BLOCKS;
+  33:	83 e8 0c             	sub    $0xc,%eax
+
+        // try indirect block
+        if (bno < vol->ind_bcnt) {
+  36:	39 c8                	cmp    %ecx,%eax
+  38:	73 13                	jae    4d <fsw_ext2_get_extent+0x4d>
+            path[0] = EXT2_IND_BLOCK;
+  3a:	c7 45 d0 0c 00 00 00 	movl   $0xc,-0x30(%ebp)
+            path[1] = bno;
+  41:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+            path[2] = -1;
+  44:	c7 45 d8 ff ff ff ff 	movl   $0xffffffff,-0x28(%ebp)
+  4b:	eb 50                	jmp    9d <fsw_ext2_get_extent+0x9d>
+        } else {
+            bno -= vol->ind_bcnt;
+
+            // try double-indirect block
+            if (bno < vol->dind_bcnt) {
+  4d:	8b 7b 44             	mov    0x44(%ebx),%edi
+        if (bno < vol->ind_bcnt) {
+            path[0] = EXT2_IND_BLOCK;
+            path[1] = bno;
+            path[2] = -1;
+        } else {
+            bno -= vol->ind_bcnt;
+  50:	29 c8                	sub    %ecx,%eax
+
+            // try double-indirect block
+            if (bno < vol->dind_bcnt) {
+  52:	39 f8                	cmp    %edi,%eax
+  54:	73 1a                	jae    70 <fsw_ext2_get_extent+0x70>
+                path[0] = EXT2_DIND_BLOCK;
+                path[1] = bno / vol->ind_bcnt;
+  56:	31 d2                	xor    %edx,%edx
+  58:	f7 f1                	div    %ecx
+        } else {
+            bno -= vol->ind_bcnt;
+
+            // try double-indirect block
+            if (bno < vol->dind_bcnt) {
+                path[0] = EXT2_DIND_BLOCK;
+  5a:	c7 45 d0 0d 00 00 00 	movl   $0xd,-0x30(%ebp)
+                path[1] = bno / vol->ind_bcnt;
+                path[2] = bno % vol->ind_bcnt;
+                path[3] = -1;
+  61:	c7 45 dc ff ff ff ff 	movl   $0xffffffff,-0x24(%ebp)
+            bno -= vol->ind_bcnt;
+
+            // try double-indirect block
+            if (bno < vol->dind_bcnt) {
+                path[0] = EXT2_DIND_BLOCK;
+                path[1] = bno / vol->ind_bcnt;
+  68:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+                path[2] = bno % vol->ind_bcnt;
+  6b:	89 55 d8             	mov    %edx,-0x28(%ebp)
+  6e:	eb 2d                	jmp    9d <fsw_ext2_get_extent+0x9d>
+                path[3] = -1;
+            } else {
+                bno -= vol->dind_bcnt;
+  70:	29 f8                	sub    %edi,%eax
+
+                // use the triple-indirect block
+                path[0] = EXT2_TIND_BLOCK;
+                path[1] = bno / vol->dind_bcnt;
+  72:	31 d2                	xor    %edx,%edx
+                path[0] = EXT2_DIND_BLOCK;
+                path[1] = bno / vol->ind_bcnt;
+                path[2] = bno % vol->ind_bcnt;
+                path[3] = -1;
+            } else {
+                bno -= vol->dind_bcnt;
+  74:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+
+                // use the triple-indirect block
+                path[0] = EXT2_TIND_BLOCK;
+                path[1] = bno / vol->dind_bcnt;
+  77:	f7 f7                	div    %edi
+                path[2] = (bno / vol->ind_bcnt) % vol->ind_bcnt;
+  79:	31 d2                	xor    %edx,%edx
+                path[3] = -1;
+            } else {
+                bno -= vol->dind_bcnt;
+
+                // use the triple-indirect block
+                path[0] = EXT2_TIND_BLOCK;
+  7b:	c7 45 d0 0e 00 00 00 	movl   $0xe,-0x30(%ebp)
+                path[1] = bno / vol->dind_bcnt;
+                path[2] = (bno / vol->ind_bcnt) % vol->ind_bcnt;
+                path[3] = bno % vol->ind_bcnt;
+                path[4] = -1;
+  82:	c7 45 e0 ff ff ff ff 	movl   $0xffffffff,-0x20(%ebp)
+            } else {
+                bno -= vol->dind_bcnt;
+
+                // use the triple-indirect block
+                path[0] = EXT2_TIND_BLOCK;
+                path[1] = bno / vol->dind_bcnt;
+  89:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+                path[2] = (bno / vol->ind_bcnt) % vol->ind_bcnt;
+  8c:	8b 45 c4             	mov    -0x3c(%ebp),%eax
+  8f:	f7 f1                	div    %ecx
+  91:	89 d7                	mov    %edx,%edi
+  93:	31 d2                	xor    %edx,%edx
+  95:	f7 f1                	div    %ecx
+                path[3] = bno % vol->ind_bcnt;
+  97:	89 7d dc             	mov    %edi,-0x24(%ebp)
+                bno -= vol->dind_bcnt;
+
+                // use the triple-indirect block
+                path[0] = EXT2_TIND_BLOCK;
+                path[1] = bno / vol->dind_bcnt;
+                path[2] = (bno / vol->ind_bcnt) % vol->ind_bcnt;
+  9a:	89 55 d8             	mov    %edx,-0x28(%ebp)
+            }
+        }
+    }
+
+    // follow the indirection path
+    buffer = dno->raw->i_block;
+  9d:	8b 7d 0c             	mov    0xc(%ebp),%edi
+  a0:	8d 55 d0             	lea    -0x30(%ebp),%edx
+  a3:	89 55 c4             	mov    %edx,-0x3c(%ebp)
+    buf_bcnt = EXT2_NDIR_BLOCKS;
+    release_bno = 0;
+  a6:	31 d2                	xor    %edx,%edx
+        }
+    }
+
+    // follow the indirection path
+    buffer = dno->raw->i_block;
+    buf_bcnt = EXT2_NDIR_BLOCKS;
+  a8:	c7 45 bc 0c 00 00 00 	movl   $0xc,-0x44(%ebp)
+        if (path[i+1] < 0)
+            break;
+
+        if (release_bno)
+            fsw_block_release(vol, release_bno, buffer);
+        status = fsw_block_get(vol, bno, 1, (void **)&buffer);
+  af:	89 75 c0             	mov    %esi,-0x40(%ebp)
+            }
+        }
+    }
+
+    // follow the indirection path
+    buffer = dno->raw->i_block;
+  b2:	8b 47 48             	mov    0x48(%edi),%eax
+  b5:	83 c0 28             	add    $0x28,%eax
+  b8:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+    buf_bcnt = EXT2_NDIR_BLOCKS;
+    release_bno = 0;
+    for (i = 0; ; i++) {
+        bno = buffer[path[i]];
+  bb:	8b 75 c4             	mov    -0x3c(%ebp),%esi
+  be:	8b 4d e4             	mov    -0x1c(%ebp),%ecx
+  c1:	8b 06                	mov    (%esi),%eax
+  c3:	8b 3c 81             	mov    (%ecx,%eax,4),%edi
+        if (bno == 0) {
+  c6:	85 ff                	test   %edi,%edi
+  c8:	75 0e                	jne    d8 <fsw_ext2_get_extent+0xd8>
+  ca:	8b 75 c0             	mov    -0x40(%ebp),%esi
+            extent->type = FSW_EXTENT_TYPE_SPARSE;
+  cd:	c7 06 01 00 00 00    	movl   $0x1,(%esi)
+  d3:	e9 8c 00 00 00       	jmp    164 <fsw_ext2_get_extent+0x164>
+            if (release_bno)
+                fsw_block_release(vol, release_bno, buffer);
+            return FSW_SUCCESS;
+        }
+        if (path[i+1] < 0)
+  d8:	8b 75 c4             	mov    -0x3c(%ebp),%esi
+  db:	83 7e 04 00          	cmpl   $0x0,0x4(%esi)
+  df:	78 32                	js     113 <fsw_ext2_get_extent+0x113>
+            break;
+
+        if (release_bno)
+  e1:	85 d2                	test   %edx,%edx
+  e3:	74 0c                	je     f1 <fsw_ext2_get_extent+0xf1>
+            fsw_block_release(vol, release_bno, buffer);
+  e5:	50                   	push   %eax
+  e6:	51                   	push   %ecx
+  e7:	52                   	push   %edx
+  e8:	53                   	push   %ebx
+  e9:	e8 fc ff ff ff       	call   ea <fsw_ext2_get_extent+0xea>
+  ee:	83 c4 10             	add    $0x10,%esp
+        status = fsw_block_get(vol, bno, 1, (void **)&buffer);
+  f1:	8d 45 e4             	lea    -0x1c(%ebp),%eax
+  f4:	50                   	push   %eax
+  f5:	6a 01                	push   $0x1
+  f7:	57                   	push   %edi
+  f8:	53                   	push   %ebx
+  f9:	e8 fc ff ff ff       	call   fa <fsw_ext2_get_extent+0xfa>
+        if (status)
+  fe:	83 c4 10             	add    $0x10,%esp
+        if (path[i+1] < 0)
+            break;
+
+        if (release_bno)
+            fsw_block_release(vol, release_bno, buffer);
+        status = fsw_block_get(vol, bno, 1, (void **)&buffer);
+ 101:	83 45 c4 04          	addl   $0x4,-0x3c(%ebp)
+        if (status)
+ 105:	85 c0                	test   %eax,%eax
+ 107:	75 73                	jne    17c <fsw_ext2_get_extent+0x17c>
+            return status;
+        release_bno = bno;
+        buf_bcnt = vol->ind_bcnt;
+ 109:	8b 53 40             	mov    0x40(%ebx),%edx
+ 10c:	89 55 bc             	mov    %edx,-0x44(%ebp)
+ 10f:	89 fa                	mov    %edi,%edx
+    }
+ 111:	eb a8                	jmp    bb <fsw_ext2_get_extent+0xbb>
+ 113:	8b 75 c0             	mov    -0x40(%ebp),%esi
+ 116:	89 45 b8             	mov    %eax,-0x48(%ebp)
+ 119:	89 55 b0             	mov    %edx,-0x50(%ebp)
+    extent->phys_start = bno;
+ 11c:	89 7e 0c             	mov    %edi,0xc(%esi)
+
+    // check if the following blocks can be aggregated into one extent
+    file_bcnt = (fsw_u32)((dno->g.size + vol->g.log_blocksize - 1) & (vol->g.log_blocksize - 1));
+ 11f:	8b 43 04             	mov    0x4(%ebx),%eax
+ 122:	8b 7d 0c             	mov    0xc(%ebp),%edi
+ 125:	48                   	dec    %eax
+ 126:	89 45 c0             	mov    %eax,-0x40(%ebp)
+ 129:	03 47 38             	add    0x38(%edi),%eax
+ 12c:	8b 7d c0             	mov    -0x40(%ebp),%edi
+ 12f:	21 f8                	and    %edi,%eax
+ 131:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+    while (path[i]           + extent->log_count < buf_bcnt &&    // indirect block has more block pointers
+ 134:	eb 0e                	jmp    144 <fsw_ext2_get_extent+0x144>
+           extent->log_start + extent->log_count < file_bcnt) {   // file has more blocks
+        if (buffer[path[i] + extent->log_count] == buffer[path[i] + extent->log_count - 1] + 1)
+ 136:	8b 54 b9 fc          	mov    -0x4(%ecx,%edi,4),%edx
+ 13a:	42                   	inc    %edx
+ 13b:	39 14 b9             	cmp    %edx,(%ecx,%edi,4)
+ 13e:	75 21                	jne    161 <fsw_ext2_get_extent+0x161>
+            extent->log_count++;
+ 140:	40                   	inc    %eax
+ 141:	89 46 08             	mov    %eax,0x8(%esi)
+    }
+    extent->phys_start = bno;
+
+    // check if the following blocks can be aggregated into one extent
+    file_bcnt = (fsw_u32)((dno->g.size + vol->g.log_blocksize - 1) & (vol->g.log_blocksize - 1));
+    while (path[i]           + extent->log_count < buf_bcnt &&    // indirect block has more block pointers
+ 144:	8b 46 08             	mov    0x8(%esi),%eax
+ 147:	8b 7d b8             	mov    -0x48(%ebp),%edi
+ 14a:	01 c7                	add    %eax,%edi
+ 14c:	3b 7d bc             	cmp    -0x44(%ebp),%edi
+ 14f:	73 10                	jae    161 <fsw_ext2_get_extent+0x161>
+           extent->log_start + extent->log_count < file_bcnt) {   // file has more blocks
+ 151:	8b 56 04             	mov    0x4(%esi),%edx
+ 154:	01 c2                	add    %eax,%edx
+ 156:	89 55 c0             	mov    %edx,-0x40(%ebp)
+    }
+    extent->phys_start = bno;
+
+    // check if the following blocks can be aggregated into one extent
+    file_bcnt = (fsw_u32)((dno->g.size + vol->g.log_blocksize - 1) & (vol->g.log_blocksize - 1));
+    while (path[i]           + extent->log_count < buf_bcnt &&    // indirect block has more block pointers
+ 159:	8b 55 c4             	mov    -0x3c(%ebp),%edx
+ 15c:	39 55 c0             	cmp    %edx,-0x40(%ebp)
+ 15f:	72 d5                	jb     136 <fsw_ext2_get_extent+0x136>
+ 161:	8b 55 b0             	mov    -0x50(%ebp),%edx
+            break;
+    }
+
+    if (release_bno)
+        fsw_block_release(vol, release_bno, buffer);
+    return FSW_SUCCESS;
+ 164:	31 c0                	xor    %eax,%eax
+            extent->log_count++;
+        else
+            break;
+    }
+
+    if (release_bno)
+ 166:	85 d2                	test   %edx,%edx
+ 168:	74 12                	je     17c <fsw_ext2_get_extent+0x17c>
+        fsw_block_release(vol, release_bno, buffer);
+ 16a:	56                   	push   %esi
+ 16b:	51                   	push   %ecx
+ 16c:	52                   	push   %edx
+ 16d:	53                   	push   %ebx
+ 16e:	89 45 b4             	mov    %eax,-0x4c(%ebp)
+ 171:	e8 fc ff ff ff       	call   172 <fsw_ext2_get_extent+0x172>
+ 176:	8b 45 b4             	mov    -0x4c(%ebp),%eax
+ 179:	83 c4 10             	add    $0x10,%esp
+    return FSW_SUCCESS;
+}
+ 17c:	8d 65 f4             	lea    -0xc(%ebp),%esp
+ 17f:	5b                   	pop    %ebx
+ 180:	5e                   	pop    %esi
+ 181:	5f                   	pop    %edi
+ 182:	5d                   	pop    %ebp
+ 183:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_dnode_free:
+
+00000000 <fsw_ext2_dnode_free>:
+ * structure to release the memory used by the file system type specific part
+ * of the dnode structure.
+ */
+
+static void fsw_ext2_dnode_free(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+    if (dno->raw)
+   3:	8b 45 0c             	mov    0xc(%ebp),%eax
+   6:	8b 40 48             	mov    0x48(%eax),%eax
+   9:	85 c0                	test   %eax,%eax
+   b:	74 09                	je     16 <fsw_ext2_dnode_free+0x16>
+        fsw_free(dno->raw);
+   d:	89 45 08             	mov    %eax,0x8(%ebp)
+}
+  10:	5d                   	pop    %ebp
+ */
+
+static void fsw_ext2_dnode_free(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno)
+{
+    if (dno->raw)
+        fsw_free(dno->raw);
+  11:	e9 fc ff ff ff       	jmp    12 <fsw_ext2_dnode_free+0x12>
+}
+  16:	5d                   	pop    %ebp
+  17:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_volume_free:
+
+00000000 <fsw_ext2_volume_free>:
+ * an unsuccessful mount to release the memory used by the file system type specific
+ * part of the volume structure.
+ */
+
+static void fsw_ext2_volume_free(struct fsw_ext2_volume *vol)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	53                   	push   %ebx
+   4:	50                   	push   %eax
+   5:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    if (vol->sb)
+   8:	8b 43 38             	mov    0x38(%ebx),%eax
+   b:	85 c0                	test   %eax,%eax
+   d:	74 0c                	je     1b <fsw_ext2_volume_free+0x1b>
+        fsw_free(vol->sb);
+   f:	83 ec 0c             	sub    $0xc,%esp
+  12:	50                   	push   %eax
+  13:	e8 fc ff ff ff       	call   14 <fsw_ext2_volume_free+0x14>
+  18:	83 c4 10             	add    $0x10,%esp
+    if (vol->inotab_bno)
+  1b:	8b 43 3c             	mov    0x3c(%ebx),%eax
+  1e:	85 c0                	test   %eax,%eax
+  20:	74 0c                	je     2e <fsw_ext2_volume_free+0x2e>
+        fsw_free(vol->inotab_bno);
+  22:	89 45 08             	mov    %eax,0x8(%ebp)
+}
+  25:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+  28:	c9                   	leave  
+static void fsw_ext2_volume_free(struct fsw_ext2_volume *vol)
+{
+    if (vol->sb)
+        fsw_free(vol->sb);
+    if (vol->inotab_bno)
+        fsw_free(vol->inotab_bno);
+  29:	e9 fc ff ff ff       	jmp    2a <fsw_ext2_volume_free+0x2a>
+}
+  2e:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+  31:	c9                   	leave  
+  32:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_readlink:
+
+00000000 <fsw_ext2_readlink>:
+ * indication. The check used here comes from the Linux kernel.
+ */
+
+static fsw_status_t fsw_ext2_readlink(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno,
+                                      struct fsw_string *link_target)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	57                   	push   %edi
+   4:	56                   	push   %esi
+   5:	53                   	push   %ebx
+   6:	83 ec 1c             	sub    $0x1c,%esp
+   9:	8b 45 0c             	mov    0xc(%ebp),%eax
+   c:	8b 7d 08             	mov    0x8(%ebp),%edi
+   f:	8b 75 10             	mov    0x10(%ebp),%esi
+    fsw_status_t    status;
+    int             ea_blocks;
+    struct fsw_string s;
+
+    if (dno->g.size > FSW_PATH_MAX)
+  12:	83 78 3c 00          	cmpl   $0x0,0x3c(%eax)
+  16:	8b 58 38             	mov    0x38(%eax),%ebx
+  19:	75 4f                	jne    6a <fsw_ext2_readlink+0x6a>
+  1b:	81 fb 00 08 00 00    	cmp    $0x800,%ebx
+  21:	77 47                	ja     6a <fsw_ext2_readlink+0x6a>
+        return FSW_VOLUME_CORRUPTED;
+
+    ea_blocks = dno->raw->i_file_acl ? (vol->g.log_blocksize >> 9) : 0;
+  23:	8b 48 48             	mov    0x48(%eax),%ecx
+  26:	31 d2                	xor    %edx,%edx
+  28:	83 79 68 00          	cmpl   $0x0,0x68(%ecx)
+  2c:	74 06                	je     34 <fsw_ext2_readlink+0x34>
+  2e:	8b 57 04             	mov    0x4(%edi),%edx
+  31:	c1 ea 09             	shr    $0x9,%edx
+
+    if (dno->raw->i_blocks - ea_blocks == 0) {
+  34:	39 51 1c             	cmp    %edx,0x1c(%ecx)
+  37:	75 23                	jne    5c <fsw_ext2_readlink+0x5c>
+        // "fast" symlink, path is stored inside the inode
+        s.type = FSW_STRING_TYPE_ISO88591;
+        s.size = s.len = (int)dno->g.size;
+        s.data = dno->raw->i_block;
+  39:	83 c1 28             	add    $0x28,%ecx
+  3c:	89 4d e4             	mov    %ecx,-0x1c(%ebp)
+        status = fsw_strdup_coerce(link_target, vol->g.host_string_type, &s);
+  3f:	8d 45 d8             	lea    -0x28(%ebp),%eax
+  42:	51                   	push   %ecx
+  43:	50                   	push   %eax
+  44:	ff 77 34             	pushl  0x34(%edi)
+
+    ea_blocks = dno->raw->i_file_acl ? (vol->g.log_blocksize >> 9) : 0;
+
+    if (dno->raw->i_blocks - ea_blocks == 0) {
+        // "fast" symlink, path is stored inside the inode
+        s.type = FSW_STRING_TYPE_ISO88591;
+  47:	c7 45 d8 01 00 00 00 	movl   $0x1,-0x28(%ebp)
+        s.size = s.len = (int)dno->g.size;
+  4e:	89 5d dc             	mov    %ebx,-0x24(%ebp)
+        s.data = dno->raw->i_block;
+        status = fsw_strdup_coerce(link_target, vol->g.host_string_type, &s);
+  51:	56                   	push   %esi
+    ea_blocks = dno->raw->i_file_acl ? (vol->g.log_blocksize >> 9) : 0;
+
+    if (dno->raw->i_blocks - ea_blocks == 0) {
+        // "fast" symlink, path is stored inside the inode
+        s.type = FSW_STRING_TYPE_ISO88591;
+        s.size = s.len = (int)dno->g.size;
+  52:	89 5d e0             	mov    %ebx,-0x20(%ebp)
+        s.data = dno->raw->i_block;
+        status = fsw_strdup_coerce(link_target, vol->g.host_string_type, &s);
+  55:	e8 fc ff ff ff       	call   56 <fsw_ext2_readlink+0x56>
+  5a:	eb 09                	jmp    65 <fsw_ext2_readlink+0x65>
+    } else {
+        // "slow" symlink, path is stored in normal inode data
+        status = fsw_dnode_readlink_data(dno, link_target);
+  5c:	52                   	push   %edx
+  5d:	52                   	push   %edx
+  5e:	56                   	push   %esi
+  5f:	50                   	push   %eax
+  60:	e8 fc ff ff ff       	call   61 <fsw_ext2_readlink+0x61>
+  65:	83 c4 10             	add    $0x10,%esp
+  68:	eb 05                	jmp    6f <fsw_ext2_readlink+0x6f>
+    fsw_status_t    status;
+    int             ea_blocks;
+    struct fsw_string s;
+
+    if (dno->g.size > FSW_PATH_MAX)
+        return FSW_VOLUME_CORRUPTED;
+  6a:	b8 05 00 00 00       	mov    $0x5,%eax
+        // "slow" symlink, path is stored in normal inode data
+        status = fsw_dnode_readlink_data(dno, link_target);
+    }
+
+    return status;
+}
+  6f:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  72:	5b                   	pop    %ebx
+  73:	5e                   	pop    %esi
+  74:	5f                   	pop    %edi
+  75:	5d                   	pop    %ebp
+  76:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_dnode_fill:
+
+00000000 <fsw_ext2_dnode_fill>:
+ * delay fetching of the inode structure until dnode_fill is called. The size and
+ * type fields are invalid until this function has been called.
+ */
+
+static fsw_status_t fsw_ext2_dnode_fill(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno)
+{
+   0:	55                   	push   %ebp
+    fsw_status_t    status;
+    fsw_u32         groupno, ino_in_group, ino_bno, ino_index;
+    fsw_u8          *buffer;
+
+    if (dno->raw)
+        return FSW_SUCCESS;
+   1:	31 c0                	xor    %eax,%eax
+ * delay fetching of the inode structure until dnode_fill is called. The size and
+ * type fields are invalid until this function has been called.
+ */
+
+static fsw_status_t fsw_ext2_dnode_fill(struct fsw_ext2_volume *vol, struct fsw_ext2_dnode *dno)
+{
+   3:	89 e5                	mov    %esp,%ebp
+   5:	57                   	push   %edi
+   6:	56                   	push   %esi
+   7:	53                   	push   %ebx
+   8:	83 ec 3c             	sub    $0x3c,%esp
+   b:	8b 75 0c             	mov    0xc(%ebp),%esi
+   e:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    fsw_status_t    status;
+    fsw_u32         groupno, ino_in_group, ino_bno, ino_index;
+    fsw_u8          *buffer;
+
+    if (dno->raw)
+  11:	83 7e 48 00          	cmpl   $0x0,0x48(%esi)
+  15:	0f 85 f9 00 00 00    	jne    114 <fsw_ext2_dnode_fill+0x114>
+        return FSW_SUCCESS;
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+  1b:	8b 46 28             	mov    0x28(%esi),%eax
+  1e:	8b 56 2c             	mov    0x2c(%esi),%edx
+  21:	89 45 d0             	mov    %eax,-0x30(%ebp)
+  24:	8b 43 38             	mov    0x38(%ebx),%eax
+  27:	83 45 d0 ff          	addl   $0xffffffff,-0x30(%ebp)
+  2b:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+  2e:	83 55 d4 ff          	adcl   $0xffffffff,-0x2c(%ebp)
+  32:	66 0f 6e 40 28       	movd   0x28(%eax),%xmm0
+  37:	66 0f d6 45 c8       	movq   %xmm0,-0x38(%ebp)
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+  3c:	ff 75 cc             	pushl  -0x34(%ebp)
+  3f:	ff 75 c8             	pushl  -0x38(%ebp)
+  42:	ff 75 d4             	pushl  -0x2c(%ebp)
+  45:	ff 75 d0             	pushl  -0x30(%ebp)
+  48:	e8 fc ff ff ff       	call   49 <fsw_ext2_dnode_fill+0x49>
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  4d:	31 d2                	xor    %edx,%edx
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+  4f:	83 c4 10             	add    $0x10,%esp
+  52:	89 45 c0             	mov    %eax,-0x40(%ebp)
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  55:	8b 03                	mov    (%ebx),%eax
+  57:	f7 73 48             	divl   0x48(%ebx)
+        return FSW_SUCCESS;
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+  5a:	ff 75 cc             	pushl  -0x34(%ebp)
+  5d:	ff 75 c8             	pushl  -0x38(%ebp)
+  60:	ff 75 d4             	pushl  -0x2c(%ebp)
+  63:	ff 75 d0             	pushl  -0x30(%ebp)
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  66:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+        return FSW_SUCCESS;
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+  69:	e8 fc ff ff ff       	call   6a <fsw_ext2_dnode_fill+0x6a>
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  6e:	31 d2                	xor    %edx,%edx
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+  70:	8b 7b 3c             	mov    0x3c(%ebx),%edi
+        return FSW_SUCCESS;
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+  73:	83 c4 10             	add    $0x10,%esp
+  76:	89 c1                	mov    %eax,%ecx
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  78:	8b 45 c0             	mov    -0x40(%ebp),%eax
+  7b:	f7 75 c4             	divl   -0x3c(%ebp)
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_dnode_fill: inode %d\n"), dno->g.dnode_id));
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+  7e:	03 04 8f             	add    (%edi,%ecx,4),%eax
+  81:	89 c7                	mov    %eax,%edi
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+    ino_index = ino_in_group % (vol->g.phys_blocksize / vol->inode_size);
+    status = fsw_block_get(vol, ino_bno, 2, (void **)&buffer);
+  83:	8d 45 e4             	lea    -0x1c(%ebp),%eax
+  86:	50                   	push   %eax
+  87:	6a 02                	push   $0x2
+  89:	57                   	push   %edi
+
+    // read the inode block
+    groupno = (dno->g.dnode_id - 1) / vol->sb->s_inodes_per_group;
+    ino_in_group = (dno->g.dnode_id - 1) % vol->sb->s_inodes_per_group;
+    ino_bno = vol->inotab_bno[groupno] +
+        ino_in_group / (vol->g.phys_blocksize / vol->inode_size);
+  8a:	89 55 d0             	mov    %edx,-0x30(%ebp)
+    ino_index = ino_in_group % (vol->g.phys_blocksize / vol->inode_size);
+    status = fsw_block_get(vol, ino_bno, 2, (void **)&buffer);
+  8d:	53                   	push   %ebx
+  8e:	e8 fc ff ff ff       	call   8f <fsw_ext2_dnode_fill+0x8f>
+    if (status)
+  93:	83 c4 10             	add    $0x10,%esp
+  96:	85 c0                	test   %eax,%eax
+  98:	75 7a                	jne    114 <fsw_ext2_dnode_fill+0x114>
+        return status;
+
+    // keep our inode around
+    status = fsw_memdup((void **)&dno->raw, buffer + ino_index * vol->inode_size, vol->inode_size);
+  9a:	8b 43 48             	mov    0x48(%ebx),%eax
+  9d:	52                   	push   %edx
+  9e:	50                   	push   %eax
+  9f:	0f af 45 d0          	imul   -0x30(%ebp),%eax
+  a3:	03 45 e4             	add    -0x1c(%ebp),%eax
+  a6:	50                   	push   %eax
+  a7:	8d 46 48             	lea    0x48(%esi),%eax
+  aa:	50                   	push   %eax
+  ab:	e8 fc ff ff ff       	call   ac <fsw_ext2_dnode_fill+0xac>
+    fsw_block_release(vol, ino_bno, buffer);
+  b0:	83 c4 0c             	add    $0xc,%esp
+  b3:	ff 75 e4             	pushl  -0x1c(%ebp)
+  b6:	57                   	push   %edi
+  b7:	53                   	push   %ebx
+  b8:	89 45 bc             	mov    %eax,-0x44(%ebp)
+  bb:	e8 fc ff ff ff       	call   bc <fsw_ext2_dnode_fill+0xbc>
+    if (status)
+  c0:	8b 45 bc             	mov    -0x44(%ebp),%eax
+  c3:	83 c4 10             	add    $0x10,%esp
+  c6:	85 c0                	test   %eax,%eax
+  c8:	75 4a                	jne    114 <fsw_ext2_dnode_fill+0x114>
+        return status;
+
+    // get info from the inode
+    dno->g.size = dno->raw->i_size;
+  ca:	8b 56 48             	mov    0x48(%esi),%edx
+  cd:	66 0f 6e 42 04       	movd   0x4(%edx),%xmm0
+  d2:	66 0f d6 46 38       	movq   %xmm0,0x38(%esi)
+    // TODO: check docs for 64-bit sized files
+    if (S_ISREG(dno->raw->i_mode))
+  d7:	0f b7 12             	movzwl (%edx),%edx
+  da:	81 e2 00 f0 00 00    	and    $0xf000,%edx
+  e0:	81 fa 00 80 00 00    	cmp    $0x8000,%edx
+  e6:	75 09                	jne    f1 <fsw_ext2_dnode_fill+0xf1>
+        dno->g.type = FSW_DNODE_TYPE_FILE;
+  e8:	c7 46 30 01 00 00 00 	movl   $0x1,0x30(%esi)
+  ef:	eb 23                	jmp    114 <fsw_ext2_dnode_fill+0x114>
+    else if (S_ISDIR(dno->raw->i_mode))
+  f1:	81 fa 00 40 00 00    	cmp    $0x4000,%edx
+  f7:	75 09                	jne    102 <fsw_ext2_dnode_fill+0x102>
+        dno->g.type = FSW_DNODE_TYPE_DIR;
+  f9:	c7 46 30 02 00 00 00 	movl   $0x2,0x30(%esi)
+ 100:	eb 12                	jmp    114 <fsw_ext2_dnode_fill+0x114>
+    else if (S_ISLNK(dno->raw->i_mode))
+        dno->g.type = FSW_DNODE_TYPE_SYMLINK;
+ 102:	81 fa 00 a0 00 00    	cmp    $0xa000,%edx
+ 108:	0f 95 c2             	setne  %dl
+ 10b:	0f b6 d2             	movzbl %dl,%edx
+ 10e:	83 c2 03             	add    $0x3,%edx
+ 111:	89 56 30             	mov    %edx,0x30(%esi)
+    else
+        dno->g.type = FSW_DNODE_TYPE_SPECIAL;
+
+    return FSW_SUCCESS;
+}
+ 114:	8d 65 f4             	lea    -0xc(%ebp),%esp
+ 117:	5b                   	pop    %ebx
+ 118:	5e                   	pop    %esi
+ 119:	5f                   	pop    %edi
+ 11a:	5d                   	pop    %ebp
+ 11b:	c3                   	ret    
+
+Disassembly of section .text.fsw_ext2_volume_mount:
+
+00000000 <fsw_ext2_volume_mount>:
+ * Mount an ext2 volume. Reads the superblock and constructs the
+ * root directory dnode.
+ */
+
+static fsw_status_t fsw_ext2_volume_mount(struct fsw_ext2_volume *vol)
+{
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	57                   	push   %edi
+   4:	56                   	push   %esi
+   5:	53                   	push   %ebx
+   6:	83 ec 48             	sub    $0x48,%esp
+   9:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    struct ext2_group_desc *gdesc;
+    int             i;
+    struct fsw_string s;
+
+    // allocate memory to keep the superblock around
+    status = fsw_alloc(sizeof(struct ext2_super_block), &vol->sb);
+   c:	68 00 04 00 00       	push   $0x400
+  11:	e8 fc ff ff ff       	call   12 <fsw_ext2_volume_mount+0x12>
+    if (status)
+  16:	83 c4 10             	add    $0x10,%esp
+    struct ext2_group_desc *gdesc;
+    int             i;
+    struct fsw_string s;
+
+    // allocate memory to keep the superblock around
+    status = fsw_alloc(sizeof(struct ext2_super_block), &vol->sb);
+  19:	89 c2                	mov    %eax,%edx
+    if (status)
+  1b:	85 d2                	test   %edx,%edx
+    struct ext2_group_desc *gdesc;
+    int             i;
+    struct fsw_string s;
+
+    // allocate memory to keep the superblock around
+    status = fsw_alloc(sizeof(struct ext2_super_block), &vol->sb);
+  1d:	89 43 38             	mov    %eax,0x38(%ebx)
+    if (status)
+  20:	b8 01 00 00 00       	mov    $0x1,%eax
+  25:	0f 84 90 01 00 00    	je     1bb <fsw_ext2_volume_mount+0x1bb>
+        return status;
+
+    // read the superblock into its buffer
+    fsw_set_blocksize(vol, EXT2_SUPERBLOCK_BLOCKSIZE, EXT2_SUPERBLOCK_BLOCKSIZE);
+  2b:	50                   	push   %eax
+  2c:	68 00 04 00 00       	push   $0x400
+  31:	68 00 04 00 00       	push   $0x400
+  36:	53                   	push   %ebx
+  37:	e8 fc ff ff ff       	call   38 <fsw_ext2_volume_mount+0x38>
+    status = fsw_block_get(vol, EXT2_SUPERBLOCK_BLOCKNO, 0, &buffer);
+  3c:	8d 45 e4             	lea    -0x1c(%ebp),%eax
+  3f:	50                   	push   %eax
+  40:	6a 00                	push   $0x0
+  42:	6a 01                	push   $0x1
+  44:	53                   	push   %ebx
+  45:	e8 fc ff ff ff       	call   46 <fsw_ext2_volume_mount+0x46>
+    if (status)
+  4a:	83 c4 20             	add    $0x20,%esp
+  4d:	85 c0                	test   %eax,%eax
+  4f:	0f 85 66 01 00 00    	jne    1bb <fsw_ext2_volume_mount+0x1bb>
+        return status;
+    fsw_memcpy(vol->sb, buffer, sizeof(struct ext2_super_block));
+  55:	50                   	push   %eax
+  56:	68 00 04 00 00       	push   $0x400
+  5b:	ff 75 e4             	pushl  -0x1c(%ebp)
+  5e:	ff 73 38             	pushl  0x38(%ebx)
+  61:	e8 fc ff ff ff       	call   62 <fsw_ext2_volume_mount+0x62>
+    fsw_block_release(vol, EXT2_SUPERBLOCK_BLOCKNO, buffer);
+  66:	83 c4 0c             	add    $0xc,%esp
+  69:	ff 75 e4             	pushl  -0x1c(%ebp)
+  6c:	6a 01                	push   $0x1
+  6e:	53                   	push   %ebx
+  6f:	e8 fc ff ff ff       	call   70 <fsw_ext2_volume_mount+0x70>
+
+    // check the superblock
+    if (vol->sb->s_magic != EXT2_SUPER_MAGIC)
+  74:	8b 53 38             	mov    0x38(%ebx),%edx
+  77:	83 c4 10             	add    $0x10,%esp
+        return FSW_UNSUPPORTED;
+  7a:	b8 03 00 00 00       	mov    $0x3,%eax
+        return status;
+    fsw_memcpy(vol->sb, buffer, sizeof(struct ext2_super_block));
+    fsw_block_release(vol, EXT2_SUPERBLOCK_BLOCKNO, buffer);
+
+    // check the superblock
+    if (vol->sb->s_magic != EXT2_SUPER_MAGIC)
+  7f:	66 81 7a 38 53 ef    	cmpw   $0xef53,0x38(%edx)
+  85:	0f 85 30 01 00 00    	jne    1bb <fsw_ext2_volume_mount+0x1bb>
+        return FSW_UNSUPPORTED;
+    if (vol->sb->s_rev_level != EXT2_GOOD_OLD_REV &&
+  8b:	83 7a 4c 01          	cmpl   $0x1,0x4c(%edx)
+  8f:	0f 87 26 01 00 00    	ja     1bb <fsw_ext2_volume_mount+0x1bb>
+        vol->sb->s_rev_level != EXT2_DYNAMIC_REV)
+        return FSW_UNSUPPORTED;
+    if (vol->sb->s_rev_level == EXT2_DYNAMIC_REV &&
+  95:	75 0d                	jne    a4 <fsw_ext2_volume_mount+0xa4>
+  97:	f7 42 60 f9 ff ff ff 	testl  $0xfffffff9,0x60(%edx)
+  9e:	0f 85 17 01 00 00    	jne    1bb <fsw_ext2_volume_mount+0x1bb>
+         (vol->sb->s_feature_incompat & EXT3_FEATURE_INCOMPAT_RECOVER))
+     Print(L"Ext2 WARNING: This ext3 file system needs recovery, trying to use it anyway.\n");
+     */
+
+    // set real blocksize
+    blocksize = EXT2_BLOCK_SIZE(vol->sb);
+  a4:	8b 4a 18             	mov    0x18(%edx),%ecx
+  a7:	be 00 04 00 00       	mov    $0x400,%esi
+  ac:	89 f0                	mov    %esi,%eax
+    fsw_set_blocksize(vol, blocksize, blocksize);
+  ae:	57                   	push   %edi
+         (vol->sb->s_feature_incompat & EXT3_FEATURE_INCOMPAT_RECOVER))
+     Print(L"Ext2 WARNING: This ext3 file system needs recovery, trying to use it anyway.\n");
+     */
+
+    // set real blocksize
+    blocksize = EXT2_BLOCK_SIZE(vol->sb);
+  af:	d3 e0                	shl    %cl,%eax
+    fsw_set_blocksize(vol, blocksize, blocksize);
+  b1:	50                   	push   %eax
+  b2:	50                   	push   %eax
+  b3:	53                   	push   %ebx
+  b4:	e8 fc ff ff ff       	call   b5 <fsw_ext2_volume_mount+0xb5>
+
+    // get other info from superblock
+    vol->ind_bcnt = EXT2_ADDR_PER_BLOCK(vol->sb);
+  b9:	8b 43 38             	mov    0x38(%ebx),%eax
+    vol->dind_bcnt = vol->ind_bcnt * vol->ind_bcnt;
+    vol->inode_size = EXT2_INODE_SIZE(vol->sb);
+  bc:	83 c4 10             	add    $0x10,%esp
+  bf:	ba 80 00 00 00       	mov    $0x80,%edx
+    // set real blocksize
+    blocksize = EXT2_BLOCK_SIZE(vol->sb);
+    fsw_set_blocksize(vol, blocksize, blocksize);
+
+    // get other info from superblock
+    vol->ind_bcnt = EXT2_ADDR_PER_BLOCK(vol->sb);
+  c4:	8b 48 18             	mov    0x18(%eax),%ecx
+  c7:	d3 e6                	shl    %cl,%esi
+  c9:	c1 ee 02             	shr    $0x2,%esi
+  cc:	89 73 40             	mov    %esi,0x40(%ebx)
+    vol->dind_bcnt = vol->ind_bcnt * vol->ind_bcnt;
+  cf:	0f af f6             	imul   %esi,%esi
+  d2:	89 73 44             	mov    %esi,0x44(%ebx)
+    vol->inode_size = EXT2_INODE_SIZE(vol->sb);
+  d5:	83 78 4c 00          	cmpl   $0x0,0x4c(%eax)
+  d9:	74 04                	je     df <fsw_ext2_volume_mount+0xdf>
+  db:	0f b7 50 58          	movzwl 0x58(%eax),%edx
+  df:	89 53 48             	mov    %edx,0x48(%ebx)
+
+    for (i = 0; i < 16; i++)
+  e2:	31 d2                	xor    %edx,%edx
+        if (vol->sb->s_volume_name[i] == 0)
+  e4:	80 7c 10 78 00       	cmpb   $0x0,0x78(%eax,%edx,1)
+  e9:	74 06                	je     f1 <fsw_ext2_volume_mount+0xf1>
+    // get other info from superblock
+    vol->ind_bcnt = EXT2_ADDR_PER_BLOCK(vol->sb);
+    vol->dind_bcnt = vol->ind_bcnt * vol->ind_bcnt;
+    vol->inode_size = EXT2_INODE_SIZE(vol->sb);
+
+    for (i = 0; i < 16; i++)
+  eb:	42                   	inc    %edx
+  ec:	83 fa 10             	cmp    $0x10,%edx
+  ef:	75 f3                	jne    e4 <fsw_ext2_volume_mount+0xe4>
+        if (vol->sb->s_volume_name[i] == 0)
+            break;
+    s.type = FSW_STRING_TYPE_ISO88591;
+    s.size = s.len = i;
+    s.data = vol->sb->s_volume_name;
+  f1:	83 c0 78             	add    $0x78,%eax
+  f4:	89 45 e0             	mov    %eax,-0x20(%ebp)
+    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+  f7:	8d 45 d4             	lea    -0x2c(%ebp),%eax
+  fa:	56                   	push   %esi
+  fb:	50                   	push   %eax
+  fc:	ff 73 34             	pushl  0x34(%ebx)
+  ff:	8d 43 0c             	lea    0xc(%ebx),%eax
+    vol->inode_size = EXT2_INODE_SIZE(vol->sb);
+
+    for (i = 0; i < 16; i++)
+        if (vol->sb->s_volume_name[i] == 0)
+            break;
+    s.type = FSW_STRING_TYPE_ISO88591;
+ 102:	c7 45 d4 01 00 00 00 	movl   $0x1,-0x2c(%ebp)
+    s.size = s.len = i;
+ 109:	89 55 d8             	mov    %edx,-0x28(%ebp)
+    s.data = vol->sb->s_volume_name;
+    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+ 10c:	50                   	push   %eax
+
+    for (i = 0; i < 16; i++)
+        if (vol->sb->s_volume_name[i] == 0)
+            break;
+    s.type = FSW_STRING_TYPE_ISO88591;
+    s.size = s.len = i;
+ 10d:	89 55 dc             	mov    %edx,-0x24(%ebp)
+    s.data = vol->sb->s_volume_name;
+    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+ 110:	e8 fc ff ff ff       	call   111 <fsw_ext2_volume_mount+0x111>
+    if (status)
+ 115:	83 c4 10             	add    $0x10,%esp
+ 118:	85 c0                	test   %eax,%eax
+ 11a:	0f 85 9b 00 00 00    	jne    1bb <fsw_ext2_volume_mount+0x1bb>
+        return status;
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+ 120:	8b 4b 38             	mov    0x38(%ebx),%ecx
+ 123:	31 d2                	xor    %edx,%edx
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+ 125:	83 ec 0c             	sub    $0xc,%esp
+    if (status)
+        return status;
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+ 128:	8b 3b                	mov    (%ebx),%edi
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+    if (status)
+ 12a:	31 f6                	xor    %esi,%esi
+    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+    if (status)
+        return status;
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+ 12c:	8b 01                	mov    (%ecx),%eax
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+ 12e:	c1 ef 05             	shr    $0x5,%edi
+    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+    if (status)
+        return status;
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+ 131:	83 e8 02             	sub    $0x2,%eax
+ 134:	f7 71 28             	divl   0x28(%ecx)
+ 137:	40                   	inc    %eax
+ 138:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+ 13b:	c1 e0 02             	shl    $0x2,%eax
+ 13e:	50                   	push   %eax
+ 13f:	e8 fc ff ff ff       	call   140 <fsw_ext2_volume_mount+0x140>
+    if (status)
+ 144:	83 c4 10             	add    $0x10,%esp
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+ 147:	89 c2                	mov    %eax,%edx
+    if (status)
+ 149:	85 d2                	test   %edx,%edx
+
+    // read the group descriptors to get inode table offsets
+    groupcnt = ((vol->sb->s_inodes_count - 2) / vol->sb->s_inodes_per_group) + 1;
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+ 14b:	89 43 3c             	mov    %eax,0x3c(%ebx)
+    if (status)
+ 14e:	b8 01 00 00 00       	mov    $0x1,%eax
+ 153:	75 50                	jne    1a5 <fsw_ext2_volume_mount+0x1a5>
+ 155:	eb 64                	jmp    1bb <fsw_ext2_volume_mount+0x1bb>
+        return status;
+    for (groupno = 0; groupno < groupcnt; groupno++) {
+        // get the block group descriptor
+        gdesc_bno = (vol->sb->s_first_data_block + 1) + groupno / gdesc_per_block;
+ 157:	8b 43 38             	mov    0x38(%ebx),%eax
+ 15a:	31 d2                	xor    %edx,%edx
+ 15c:	8b 48 14             	mov    0x14(%eax),%ecx
+ 15f:	89 f0                	mov    %esi,%eax
+ 161:	f7 f7                	div    %edi
+ 163:	89 55 c0             	mov    %edx,-0x40(%ebp)
+ 166:	8d 54 01 01          	lea    0x1(%ecx,%eax,1),%edx
+        gdesc_index = groupno % gdesc_per_block;
+        status = fsw_block_get(vol, gdesc_bno, 1, (void **)&buffer);
+ 16a:	8d 45 e4             	lea    -0x1c(%ebp),%eax
+ 16d:	50                   	push   %eax
+ 16e:	6a 01                	push   $0x1
+ 170:	52                   	push   %edx
+ 171:	53                   	push   %ebx
+ 172:	89 55 bc             	mov    %edx,-0x44(%ebp)
+ 175:	e8 fc ff ff ff       	call   176 <fsw_ext2_volume_mount+0x176>
+        if (status)
+ 17a:	83 c4 10             	add    $0x10,%esp
+ 17d:	8b 55 bc             	mov    -0x44(%ebp),%edx
+ 180:	85 c0                	test   %eax,%eax
+ 182:	75 37                	jne    1bb <fsw_ext2_volume_mount+0x1bb>
+            return status;
+        gdesc = ((struct ext2_group_desc *)(buffer)) + gdesc_index;
+        vol->inotab_bno[groupno] = gdesc->bg_inode_table;
+ 184:	8b 45 c0             	mov    -0x40(%ebp),%eax
+ 187:	c1 e0 05             	shl    $0x5,%eax
+ 18a:	03 45 e4             	add    -0x1c(%ebp),%eax
+ 18d:	8b 48 08             	mov    0x8(%eax),%ecx
+ 190:	8b 43 3c             	mov    0x3c(%ebx),%eax
+ 193:	89 0c b0             	mov    %ecx,(%eax,%esi,4)
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+    if (status)
+        return status;
+    for (groupno = 0; groupno < groupcnt; groupno++) {
+ 196:	46                   	inc    %esi
+        status = fsw_block_get(vol, gdesc_bno, 1, (void **)&buffer);
+        if (status)
+            return status;
+        gdesc = ((struct ext2_group_desc *)(buffer)) + gdesc_index;
+        vol->inotab_bno[groupno] = gdesc->bg_inode_table;
+        fsw_block_release(vol, gdesc_bno, buffer);
+ 197:	51                   	push   %ecx
+ 198:	ff 75 e4             	pushl  -0x1c(%ebp)
+ 19b:	52                   	push   %edx
+ 19c:	53                   	push   %ebx
+ 19d:	e8 fc ff ff ff       	call   19e <fsw_ext2_volume_mount+0x19e>
+    gdesc_per_block = (vol->g.phys_blocksize / sizeof(struct ext2_group_desc));
+
+    status = fsw_alloc(sizeof(fsw_u32) * groupcnt, &vol->inotab_bno);
+    if (status)
+        return status;
+    for (groupno = 0; groupno < groupcnt; groupno++) {
+ 1a2:	83 c4 10             	add    $0x10,%esp
+ 1a5:	3b 75 c4             	cmp    -0x3c(%ebp),%esi
+ 1a8:	72 ad                	jb     157 <fsw_ext2_volume_mount+0x157>
+        vol->inotab_bno[groupno] = gdesc->bg_inode_table;
+        fsw_block_release(vol, gdesc_bno, buffer);
+    }
+
+    // setup the root dnode
+    status = fsw_dnode_create_root(vol, EXT2_ROOT_INO, &vol->g.root);
+ 1aa:	8d 43 08             	lea    0x8(%ebx),%eax
+ 1ad:	50                   	push   %eax
+ 1ae:	6a 00                	push   $0x0
+ 1b0:	6a 02                	push   $0x2
+ 1b2:	53                   	push   %ebx
+ 1b3:	e8 fc ff ff ff       	call   1b4 <fsw_ext2_volume_mount+0x1b4>
+ 1b8:	83 c4 10             	add    $0x10,%esp
+        return status;
+
+    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_ext2_volume_mount: success, blocksize %d\n"), blocksize));
+
+    return FSW_SUCCESS;
+}
+ 1bb:	8d 65 f4             	lea    -0xc(%ebp),%esp
+ 1be:	5b                   	pop    %ebx
+ 1bf:	5e                   	pop    %esi
+ 1c0:	5f                   	pop    %edi
+ 1c1:	5d                   	pop    %ebp
+ 1c2:	c3                   	ret    

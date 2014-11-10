@@ -1,0 +1,27 @@
+E-mail from Erik Kemperman (erikkemperman@gmail.com):
+
+hi,
+
+First of all, I'd like to thank you profusely for making rEFInd, and the
+excellent documentation, available!
+
+I would gladly donate -- had I not just spent pretty much all of my hard
+earned cash on this new MacBook Pro... I'm sure you hear that a lot.
+
+Still, thanks in no small part to your efforts I am now happily dual
+booting MacOS Mountain Lion and Linux Mint 14. There's really only one
+glitch that I think you might want to know about; see below.
+
+So, since I had read that you welcome suggestions for a logo, I decided to
+have some fun with that. Please find attached the SVG file I came up with
+(in InkScape) and three (rasterized at modest scale) variations I made (in
+GIMP).
+
+The idea -- although I will have failed if it's not immediately obvious --
+was to combine the ubiquitous icons for "refresh/reload" and "find". I kept
+them in grayscale so they should work against most backgrounds (banners).
+
+Please feel free to do with these (or not) as you like, I hereby grant you
+all rights. If you like the concept but not the execution, suggestions for
+improvement would be welcome. Likewise, let me know if you'd like them in
+different format / size.

@@ -1,5 +1,5 @@
 /*
- * refind/lib.c
+ * refit/lib.c
  * General library functions
  *
  * Copyright (c) 2006-2009 Christoph Pfisterer
@@ -201,11 +201,6 @@ EFI_STATUS InitRefitLib(IN EFI_HANDLE ImageHandle)
 // called before running external programs to close open file handles
 VOID UninitRefitLib(VOID)
 {
-    // This piece of code was made to correspond to weirdness in ReinitRefitLib().
-    // See the comment on it there.
-    if(SelfRootDir == SelfVolume->RootDir)
-        SelfRootDir=0;
-
     UninitVolumes();
 
     if (SelfDir != NULL) {
@@ -510,7 +505,7 @@ static VOID ScanVolumeBootcode(REFIT_VOLUME *Volume, BOOLEAN *Bootable)
     if (!EFI_ERROR(Status)) {
 
         Volume->FSType = IdentifyFilesystemType(Buffer, SAMPLE_SIZE);
-        if ((*((UINT16 *)(Buffer + 510)) == 0xaa55 && Buffer[0] != 0) && (FindMem(Buffer, 512, "EXFAT", 5) == -1)) {
+        if (*((UINT16 *)(Buffer + 510)) == 0xaa55 && Buffer[0] != 0) {
             *Bootable = TRUE;
             Volume->HasBootCode = TRUE;
         }
@@ -645,11 +640,13 @@ static VOID ScanVolumeBootcode(REFIT_VOLUME *Volume, BOOLEAN *Bootable)
 // Set default volume badge icon based on /.VolumeBadge.{icns|png} file or disk kind
 VOID SetVolumeBadgeIcon(REFIT_VOLUME *Volume)
 {
+   Print(L"Entering SetVolumeBadgeIcon(%s)\n", Volume->VolName);
    if (Volume->VolBadgeImage == NULL) {
       Volume->VolBadgeImage = egLoadIconAnyType(Volume->RootDir, L"", L".VolumeBadge", 128);
    }
 
    if (Volume->VolBadgeImage == NULL) {
+      Print(L"Adding volume badge image based on disk kind, which is %d\n", Volume->DiskKind);
       switch (Volume->DiskKind) {
           case DISK_KIND_INTERNAL:
              Volume->VolBadgeImage = BuiltinIcon(BUILTIN_ICON_VOL_INTERNAL);
@@ -662,6 +659,7 @@ VOID SetVolumeBadgeIcon(REFIT_VOLUME *Volume)
              break;
       } // switch()
    }
+//   PauseForKey();
 } // VOID SetVolumeBadgeIcon()
 
 // Return a string representing the input size in IEEE-1541 units.
@@ -758,6 +756,7 @@ VOID ScanVolume(REFIT_VOLUME *Volume)
     UINTN                   PartialLength;
     BOOLEAN                 Bootable;
 
+    Print(L"Entering ScanVolume()\n");
     // get device path
     Volume->DevicePath = DuplicateDevicePath(DevicePathFromHandle(Volume->DeviceHandle));
 #if REFIT_DEBUG > 0
@@ -858,10 +857,6 @@ VOID ScanVolume(REFIT_VOLUME *Volume)
 
     // open the root directory of the volume
     Volume->RootDir = LibOpenRoot(Volume->DeviceHandle);
-
-    // Set volume icon based on .VolumeBadge icon or disk kind
-    SetVolumeBadgeIcon(Volume);
-
     if (Volume->RootDir == NULL) {
         Volume->IsReadable = FALSE;
         return;
@@ -871,9 +866,14 @@ VOID ScanVolume(REFIT_VOLUME *Volume)
 
     Volume->VolName = GetVolumeName(Volume);
 
+    // Set volume icon based on .VolumeBadge icon or disk kind
+    SetVolumeBadgeIcon(Volume);
+
     // get custom volume icons if present
     if (!Volume->VolIconImage)
        Volume->VolIconImage = egLoadIconAnyType(Volume->RootDir, L"", L".VolumeIcon", 128);
+    Print(L"Exiting ScanVolume()\n");
+    PauseForKey();
 } // ScanVolume()
 
 static VOID ScanExtendedPartition(REFIT_VOLUME *WholeDiskVolume, MBR_PARTITION_INFO *MbrEntry)

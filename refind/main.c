@@ -59,6 +59,7 @@
 #define EFI_SECURITY_VIOLATION    EFIERR (26)
 #else
 #include "../EfiLib/BdsHelper.h"
+#include "../EfiLib/legacy.h"
 #endif // __MAKEWITH_GNUEFI
 
 #ifndef EFI_OS_INDICATIONS_BOOT_TO_FW_UI
@@ -152,7 +153,7 @@ static VOID AboutrEFInd(VOID)
 {
     if (AboutMenu.EntryCount == 0) {
         AboutMenu.TitleImage = BuiltinIcon(BUILTIN_ICON_FUNC_ABOUT);
-        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.7.4");
+        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.7.5");
         AddMenuInfoLine(&AboutMenu, L"");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2006-2010 Christoph Pfisterer");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2012-2013 Roderick W. Smith");
@@ -283,7 +284,7 @@ static EFI_STATUS StartEFIImageList(IN EFI_DEVICE_PATH **DevicePaths,
        // protect for this condition; but sometimes Volume comes back NULL, so provide
        // an exception. (TODO: Handle this special condition better.)
        if ((LoaderType == TYPE_LEGACY) || (Volume == NULL) || IsValidLoader(Volume->RootDir, Filename)) {
-          if (Filename) {
+          if (Filename && (LoaderType != TYPE_LEGACY)) {
              Temp = PoolPrint(L"\\%s %s", Filename, FullLoadOptions ? FullLoadOptions : L"");
              if (Temp != NULL) {
                 MyFreePool(FullLoadOptions);
@@ -1624,10 +1625,18 @@ static VOID StartLegacy(IN LEGACY_ENTRY *Entry)
 
 // Start a device on a non-Mac using the EFI_LEGACY_BIOS_PROTOCOL
 #ifdef __MAKEWITH_TIANO
-static VOID StartLegacyUEFI(IN LEGACY_ENTRY *Entry)
+static VOID StartLegacyUEFI(LEGACY_ENTRY *Entry)
 {
-    BeginExternalScreen(TRUE, L"Booting Legacy OS (UEFI mode)");
+//     UINTN ExitDataSize = 0;
+//     CHAR16 *ExitData = NULL;
+//     EFI_STATUS Status;
 
+    BeginExternalScreen(TRUE, L"Booting Legacy OS (UEFI mode)");
+//    Print(L"Launching from '%s'\n", DevicePathToStr(Entry->BdsOption->DevicePath));
+//    PauseForKey();
+
+//    Status = BdsLibBootViaBootOption(Entry->BdsOption, Entry->BdsOption->DevicePath, &ExitDataSize, &ExitData);
+//    Print(L"BdsLibBootViaBootOption() returned %d\n", Status);
     BdsLibConnectDevicePath (Entry->BdsOption->DevicePath);
     BdsLibDoLegacyBoot(Entry->BdsOption);
 
@@ -2148,6 +2157,17 @@ static VOID WarnIfLegacyProblems() {
 // Locates boot loaders. NOTE: This assumes that GlobalConfig.LegacyType is set correctly.
 static VOID ScanForBootloaders(VOID) {
    UINTN  i;
+
+//    if (GlobalConfig.LegacyType == LEGACY_TYPE_UEFI) {
+//       Print(L"About to call BdsDeleteAllInvalidLegacyBootOptions()\n");
+//       BdsDeleteAllInvalidLegacyBootOptions();
+//       Print(L"About to call BdsAddNonExistingLegacyBootOptions()\n");
+//       BdsAddNonExistingLegacyBootOptions();
+//       Print(L"About to call BdsUpdateLegacyDevOrder()\n");
+// //      BdsUpdateLegacyDevOrder(); // EXTREME CAUTION: HOSED ONE FIRMWARE!
+//       Print(L"Done with legacy boot updates!\n");
+//       PauseForKey();
+//    }
 
    ScanVolumes();
 

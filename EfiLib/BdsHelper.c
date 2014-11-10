@@ -133,11 +133,11 @@ BdsLibDoLegacyBoot (
 //     Print(L"Option->DevicePath->Length[1]= '%d'\n", Option->DevicePath->Length[1]);
 //     Print(L"OptionBBS->DeviceType='%d'\n",OptionBBS->DeviceType);
 //     Print(L"OptionBBS->StatusFlag='%d'\n",OptionBBS->StatusFlag);
-//     Print(L"OptionBBS->String[0]='%c'\n",OptionBBS->String[0]);
+//     Print(L"OptionBBS->String[0]='%s'\n",OptionBBS->String);
 //     Print(L"About to legacy boot!\n");
 //     PauseForKey();
 
-    UpdateBbsTable(OptionBBS->DeviceType); 
+    UpdateBbsTable(OptionBBS->DeviceType);
 
     return LegacyBios->LegacyBoot (LegacyBios, (BBS_BBS_DEVICE_PATH *) Option->DevicePath, Option->LoadOptionsSize, Option->LoadOptions);
 }
