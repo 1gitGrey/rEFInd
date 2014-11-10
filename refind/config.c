@@ -46,22 +46,18 @@
 #include "global.h"
 #include "lib.h"
 #include "icns.h"
-#include "menu.h"
 #include "config.h"
 #include "screen.h"
 #include "refit_call_wrapper.h"
 
 // constants
 
-#define CONFIG_FILE_NAME        L"refind.conf"
-#define LINUX_OPTIONS_FILENAME  L"linux.conf"
-#define MAXCONFIGFILESIZE       (1024*1024)
+#define CONFIG_FILE_NAME    L"refind.conf"
+#define MAXCONFIGFILESIZE   (64*1024)
 
 #define ENCODING_ISO8859_1  (0)
 #define ENCODING_UTF8       (1)
 #define ENCODING_UTF16_LE   (2)
-
-static REFIT_MENU_ENTRY MenuEntryReturn   = { L"Return to Main Menu", TAG_RETURN, 0, 0, 0, NULL, NULL, NULL };
 
 //
 // read a file into a buffer
@@ -261,7 +257,7 @@ UINTN ReadTokenLine(IN REFIT_FILE *File, OUT CHAR16 ***TokenList)
     return (TokenCount);
 } /* ReadTokenLine() */
 
-VOID FreeTokenLine(IN OUT CHAR16 ***TokenList, IN OUT UINTN *TokenCount)
+static VOID FreeTokenLine(IN OUT CHAR16 ***TokenList, IN OUT UINTN *TokenCount)
 {
     // TODO: also free the items
     FreeList((VOID ***)TokenList, TokenCount);
@@ -398,60 +394,6 @@ VOID ReadConfig(VOID)
     FreePool(File.Buffer);
 } /* VOID ReadConfig() */
 
-static VOID AddSubmenu(LOADER_ENTRY *Entry, REFIT_FILE *File, REFIT_VOLUME *Volume, CHAR16 *Title) {
-   REFIT_MENU_SCREEN  *SubScreen;
-   LOADER_ENTRY       *SubEntry;
-   UINTN              TokenCount;
-   CHAR16             **TokenList;
-
-   SubScreen = InitializeSubScreen(Entry);
-
-   // Set defaults for the new entry; will be modified based on lines read from the config. file....
-   SubEntry = InitializeLoaderEntry(Entry);
-
-   if ((SubEntry == NULL) || (SubScreen == NULL))
-      return;
-   SubEntry->me.Title        = StrDuplicate(Title);
-   
-   while (((TokenCount = ReadTokenLine(File, &TokenList)) > 0) && (StriCmp(TokenList[0], L"}") != 0)) {
-      if ((StriCmp(TokenList[0], L"loader") == 0) && (TokenCount > 1)) { // set the boot loader filename
-         if (SubEntry->LoaderPath != NULL)
-            FreePool(SubEntry->LoaderPath);
-         SubEntry->LoaderPath = StrDuplicate(TokenList[1]);
-         SubEntry->DevicePath = FileDevicePath(Volume->DeviceHandle, SubEntry->LoaderPath);
-      } else if (StriCmp(TokenList[0], L"initrd") == 0) {
-         if (SubEntry->InitrdPath != NULL)
-            FreePool(SubEntry->InitrdPath);
-         SubEntry->InitrdPath = NULL;
-         if (TokenCount > 1)
-            SubEntry->InitrdPath = StrDuplicate(TokenList[1]);
-      } else if (StriCmp(TokenList[0], L"options") == 0) {
-         if (SubEntry->LoadOptions != NULL)
-            FreePool(SubEntry->LoadOptions);
-         SubEntry->LoadOptions = NULL;
-         if (TokenCount > 1) {
-            SubEntry->LoadOptions = StrDuplicate(TokenList[1]);
-         } // if/else
-      } else if ((StriCmp(TokenList[0], L"add_options") == 0) && (TokenCount > 1)) {
-         MergeStrings(&SubEntry->LoadOptions, TokenList[1], L' ');
-      } else if ((StriCmp(TokenList[0], L"graphics") == 0) && (TokenCount > 1)) {
-         SubEntry->UseGraphicsMode = (StriCmp(TokenList[1], L"on") == 0);
-      } else if (StriCmp(TokenList[0], L"disabled") == 0) {
-         SubEntry->Enabled = FALSE;
-      } // ief/elseif
-      FreeTokenLine(&TokenList, &TokenCount);
-   } // while()
-   if (SubEntry->InitrdPath != NULL) {
-      MergeStrings(&SubEntry->LoadOptions, L"initrd=", L' ');
-      MergeStrings(&SubEntry->LoadOptions, SubEntry->InitrdPath, 0);
-      FreePool(SubEntry->InitrdPath);
-      SubEntry->InitrdPath = NULL;
-   } // if
-   if (SubEntry->Enabled == TRUE)
-      AddMenuEntry(SubScreen, (REFIT_MENU_ENTRY *)SubEntry);
-   Entry->me.SubScreen = SubScreen;
-} // VOID AddSubmenu()
-
 // Adds the options from a SINGLE loaders.conf stanza to a new loader entry and returns
 // that entry. The calling function is then responsible for adding the entry to the
 // list of entries.
@@ -459,68 +401,52 @@ static LOADER_ENTRY * AddStanzaEntries(REFIT_FILE *File, REFIT_VOLUME *Volume, C
    CHAR16       **TokenList;
    UINTN        TokenCount;
    LOADER_ENTRY *Entry;
-   BOOLEAN      DefaultsSet = FALSE, AddedSubmenu = FALSE;
+   BOOLEAN      DefaultsSet = FALSE;
 
    // prepare the menu entry
-   Entry = InitializeLoaderEntry(NULL);
-   if (Entry == NULL)
-      return NULL;
-
+   Entry = AllocateZeroPool(sizeof(LOADER_ENTRY));
    Entry->Title           = StrDuplicate(Title);
    Entry->me.Title        = PoolPrint(L"Boot %s from %s", (Title != NULL) ? Title : L"Unknown", Volume->VolName);
+   Entry->me.Tag          = TAG_LOADER;
    Entry->me.Row          = 0;
    Entry->me.BadgeImage   = Volume->VolBadgeImage;
+   Entry->LoaderPath      = NULL; // This MUST be set via a "loader" line for normal functioning!
+   Entry->DevicePath      = NULL; // This MUST be set via a "loader" line for normal functioning!
    Entry->VolName         = Volume->VolName;
+   Entry->UseGraphicsMode = FALSE;
+   Entry->Enabled         = TRUE;
+   Entry->OSType          = ' ';
 
-   // Parse the config file to add options for a single stanza, terminating when the token
-   // is "}" or when the end of file is reached.
    while (((TokenCount = ReadTokenLine(File, &TokenList)) > 0) && (StriCmp(TokenList[0], L"}") != 0)) {
-      if ((StriCmp(TokenList[0], L"loader") == 0) && (TokenCount > 1)) { // set the boot loader filename
+      if (StriCmp(TokenList[0], L"loader") == 0) { // set the boot loader filename
          Entry->LoaderPath = StrDuplicate(TokenList[1]);
          Entry->DevicePath = FileDevicePath(Volume->DeviceHandle, Entry->LoaderPath);
          SetLoaderDefaults(Entry, TokenList[1], Volume);
          FreePool(Entry->LoadOptions);
          Entry->LoadOptions = NULL; // Discard default options, if any
          DefaultsSet = TRUE;
-      } else if ((StriCmp(TokenList[0], L"icon") == 0) && (TokenCount > 1)) {
+      } else if (StriCmp(TokenList[0], L"icon") == 0) {
          FreePool(Entry->me.Image);
          Entry->me.Image = LoadIcns(Volume->RootDir, TokenList[1], 128);
          if (Entry->me.Image == NULL) {
             Entry->me.Image = DummyImage(128);
          }
-      } else if ((StriCmp(TokenList[0], L"initrd") == 0) && (TokenCount > 1)) {
-         if (Entry->InitrdPath)
-            FreePool(Entry->InitrdPath);
-         Entry->InitrdPath = StrDuplicate(TokenList[1]);
-      } else if ((StriCmp(TokenList[0], L"options") == 0) && (TokenCount > 1)) {
-         if (Entry->LoadOptions)
-            FreePool(Entry->LoadOptions);
-         Entry->LoadOptions = StrDuplicate(TokenList[1]);
-      } else if ((StriCmp(TokenList[0], L"ostype") == 0) && (TokenCount > 1)) {
+      } else if (StriCmp(TokenList[0], L"initrd") == 0) {
+         MergeStrings(&Entry->LoadOptions, L"initrd=", L' ');
+         MergeStrings(&Entry->LoadOptions, TokenList[1], 0);
+      } else if (StriCmp(TokenList[0], L"options") == 0) {
+         MergeStrings(&Entry->LoadOptions, TokenList[1], L' ');
+      } else if (StriCmp(TokenList[0], L"ostype") == 0) {
          if (TokenCount > 1) {
             Entry->OSType = TokenList[1][0];
          }
-      } else if ((StriCmp(TokenList[0], L"graphics") == 0) && (TokenCount > 1)) {
+      } else if (StriCmp(TokenList[0], L"graphics") == 0) {
          Entry->UseGraphicsMode = (StriCmp(TokenList[1], L"on") == 0);
       } else if (StriCmp(TokenList[0], L"disabled") == 0) {
          Entry->Enabled = FALSE;
-      } else if ((StriCmp(TokenList[0], L"submenuentry") == 0) && (TokenCount > 1)) {
-         AddSubmenu(Entry, File, Volume, TokenList[1]);
-         AddedSubmenu = TRUE;
       } // set options to pass to the loader program
       FreeTokenLine(&TokenList, &TokenCount);
    } // while()
-
-   if (AddedSubmenu)
-       AddMenuEntry(Entry->me.SubScreen, &MenuEntryReturn);
-
-   if (Entry->InitrdPath) {
-      MergeStrings(&Entry->LoadOptions, L"initrd=", L' ');
-      MergeStrings(&Entry->LoadOptions, Entry->InitrdPath, 0);
-      FreePool(Entry->InitrdPath);
-      Entry->InitrdPath = NULL;
-   } // if
-
    if (!DefaultsSet)
       SetLoaderDefaults(Entry, L"\\EFI\\BOOT\\nemo.efi", Volume); // user included no entry; use bogus one
 
@@ -535,9 +461,10 @@ VOID ScanUserConfigured(VOID)
    REFIT_FILE        File;
    REFIT_VOLUME      *Volume;
    CHAR16            **TokenList;
-   CHAR16            *Title = NULL;
+   CHAR16            Title[256];
    UINTN             TokenCount;
    LOADER_ENTRY      *Entry;
+   REFIT_MENU_SCREEN *SubScreen;
 
    if (FileExists(SelfDir, CONFIG_FILE_NAME)) {
       Status = ReadFile(SelfDir, CONFIG_FILE_NAME, &File);
@@ -549,62 +476,16 @@ VOID ScanUserConfigured(VOID)
 
       while ((TokenCount = ReadTokenLine(&File, &TokenList)) > 0) {
          if ((StriCmp(TokenList[0], L"menuentry") == 0) && (TokenCount > 1)) {
-            Title = StrDuplicate(TokenList[1]);
-            Entry = AddStanzaEntries(&File, Volume, TokenList[1]);
+            StrCpy(Title, TokenList[1]);
+            Entry = AddStanzaEntries(&File, Volume, Title);
             if (Entry->Enabled) {
-               if (Entry->me.SubScreen == NULL)
-                  GenerateSubScreen(Entry, Volume);
-               AddPreparedLoaderEntry(Entry);
+               SubScreen = GenerateSubScreen(Entry, Volume);
+               AddPreparedLoaderEntry(Entry, SubScreen);
             } else {
                FreePool(Entry);
             } // if/else
-            FreePool(Title);
          } // if
          FreeTokenLine(&TokenList, &TokenCount);
       } // while()
    } // if()
 } // VOID ScanUserConfigured()
-
-// Read a Linux kernel options file for a Linux boot loader into memory. The LoaderPath
-// and Volume variables identify the location of the options file, but not its name --
-// you pass this function the filename of the Linux kernel, initial RAM disk, or other
-// file in the target directory, and this function finds the file with the name
-// LINUX_OPTIONS_FILENAME within that directory and loads it.
-// The return value is a pointer to the REFIT_FILE handle for the file, or NULL if
-// it wasn't found.
-REFIT_FILE * ReadLinuxOptionsFile(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume) {
-   CHAR16       *OptionsFilename = NULL;
-   REFIT_FILE   *File = NULL;
-   EFI_STATUS   Status;
-   
-   OptionsFilename = FindPath(LoaderPath);
-   MergeStrings(&OptionsFilename, LINUX_OPTIONS_FILENAME, L'\\');
-   if (FileExists(Volume->RootDir, OptionsFilename)) {
-      File = AllocateZeroPool(sizeof(REFIT_FILE));
-      Status = ReadFile(Volume->RootDir, OptionsFilename, File);
-      if (CheckError(Status, L"while loading the Linux options file"))
-         File = NULL;
-   }
-   if (OptionsFilename != NULL)
-      FreePool(OptionsFilename);
-   return (File);
-} // static REFIT_FILE * FindLinuxOptionsFile()
-
-// Retrieve a single line of options from a Linux kernel options file
-CHAR16 * GetFirstOptionsFromFile(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume) {
-   UINTN        TokenCount;
-   CHAR16       *Options = NULL;
-   CHAR16       **TokenList;
-   REFIT_FILE   *File;
-
-   File = ReadLinuxOptionsFile(LoaderPath, Volume);
-   if (File != NULL) {
-      TokenCount = ReadTokenLine(File, &TokenList);
-      if (TokenCount > 1)
-         Options = StrDuplicate(TokenList[1]);
-      FreeTokenLine(&TokenList, &TokenCount);
-      FreePool(File);
-   }
-   return Options;
-} // static CHAR16 * GetOptionsFile()
-

@@ -1,6 +1,6 @@
 #
 # refind/Makefile
-# Build control file for the rEFInd boot menu
+# Build control file for the Prefit boot menu
 #
 
 SRCDIR = .
@@ -28,3 +28,10 @@ include $(SRCDIR)/../Make.common
 
 # EOF
 # DO NOT DELETE
+
+config.o: global.h lib.h config.h screen.h
+icns.o: global.h lib.h config.h
+lib.o: global.h lib.h screen.h
+main.o: global.h config.h screen.h lib.h menu.h ../include/syslinux_mbr.h
+menu.o: global.h screen.h lib.h menu.h config.h
+screen.o: global.h screen.h config.h

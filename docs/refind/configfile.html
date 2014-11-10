@@ -14,7 +14,7 @@
   <p class="subhead">by Roderick W. Smith, <a
 href="mailto:rodsmith@rodsbooks.com">rodsmith@rodsbooks.com</a></p>
 
-  <p>Last Web page update: 3/19/2012, referencing rEFInd 0.2.1</p>
+  <p>Last Web page update: 3/14/2012, referencing rEFInd 0.2.0</p>
 
 
 <p>I'm a technical writer and consultant specializing in Linux technologies. This Web page is provided free of charge and with no annoying outside ads; however, I did take time to prepare it, and Web hosting does cost money. If you find this Web page useful, please consider making a small donation to help keep this site up and running. Thanks!</p>
@@ -167,8 +167,8 @@ timeout 20
 </tr>
 <tr>
    <td><tt>default_selection</tt></td>
-   <td>A substring of a boot loader's title</td>
-   <td>Sets the default boot OS based on the loader's title, which appears in the main menu when you select the loader; the text reads <tt>Boot <i>Title</i> from <i>Disk</i></tt>. You can enter any substring of <tt><i>Title</i></tt> as the <tt>default_selection</tt>, so long as it's two or more characters in length. Be sure you enter a unique substring, though; rEFInd stops searching when it finds the first match. One-character entries are matched against the first character of the title, except for digits, which refer to the numeric order of the boot loader entries. (Note: In version 0.2.0, only the first character of this entry was used, and was matched against the first character of the title.)</td>
+   <td><tt>M</tt>, <tt>L</tt>, <tt>W</tt>, <tt>E</tt>, <tt>P</tt>, <tt>U</tt>, or a digit from <tt>1</tt> to <tt>9</tt></td>
+   <td>Sets the default boot OS&mdash;<tt>M</tt> for Mac OS X, <tt>L</tt> for Linux, or <tt>W</tt> for Windows. The digits <tt>1</tt> through <tt>9</tt> set the default based on the position in the OS list. <tt>E</tt> sets the EFI shell, <tt>P</tt> sets the partitioning tool, and <tt>U</tt> sets shutdown as the default. You can also set default options that match other detected OSes based on the first letter of their names, but this can sometimes result in conflicts. The default value is <tt>1</tt>.</td>
 </tr>
 </table>
 
@@ -228,7 +228,7 @@ default_selection L
 </tr>
 <tr>
    <td><tt>ostype</tt></td>
-   <td><tt>MacOS</tt>, <tt>Linux</tt>, <tt>ELILO</tt>, <tt>Windows</tt>, <tt>XOM</tt></td>
+   <td><tt>MacOS</tt>, <tt>Linux</tt>, <tt>Windows</tt>, or <tt>XOM</tt></td>
    <td>Determines the options that are available on a sub-menu obtained by pressing the Insert key with an OS selected in the main menu. If you omit this option, rEFInd selects options using an auto-detection algorithm. Note that this option is case-sensitive.</td>
 </tr>
 <tr>
@@ -245,11 +245,6 @@ default_selection L
    <td><tt>disabled</tt></td>
    <td>None</td>
    <td>Disable an entry. This is often easier than commenting out an entire entry if you want to temporarily disable it.</td>
-</tr>
-<tr>
-   <td><tt>submenuentry</tt></td>
-   <td>submenu entry name and tokens</td>
-   <td>This keyword identifies a submenu entry, as described in more detail shortly.</td>
 </tr>
 </table>
 
@@ -277,100 +272,6 @@ menuentry Gentoo {
 
 <p>Presently, an important limitation of rEFInd is that the manual boot loader definitions can only read files on the partition from which rEFInd launched. rEFInd can, however, auto-detect boot loaders on other disks or partitions via the <tt>internal</tt>, <tt>external</tt>, and similar options.</p>
 
-<h2>Creating Submenu Entries</h2>
-
-<p>As described on the <a href="using.html">Using rEFInd</a> page, rEFInd can present a menu of options for certain loader tags when you press the Insert, F2, or + key. rEFInd does this automatically when it detects Mac OS X or ELILO boot loaders, or when you set the OS type via the <tt>ostype</tt> option. The Mac OS X boot loader, in particular, accepts various options that you can use to boot in various ways.</p>
-
-<p>Sometimes, you might want to create your own custom submenu entries, and rEFInd 0.2.1 and later enable you to do this. To create a custom submenu, you use the <tt>submenuentry</tt> keyword <i>inside</i> a <tt>menuentry</tt> stanza. Normally, you'll set the submenu definitions <i>after</i> you've set the main menu options, since the submenu options take the main menu options as defult, and so the main options must be set first. Like a <tt>menuentry</tt> stanza, a <tt>submenuentry</tt> definition begins with the keyword, the name of the item, and an open curly brace (<tt>{</tt>). It continues until a close curly brace (<tt>}</tt>). A submenu definition can use the keywords described in <a href="#table3">Table 3.</a> Except as otherwise noted, using an option of a given name completely overrides the setting in the main stanza.</p>
-
-<table border="1" cellpadding="1" cellspacing="2" summary="Table 3: Submenu keywords in <tt>refind.conf</tt>"><a name="table3"><caption><b>Table 3: Submenu keywords in <tt>refind.conf</tt></b></caption></a>
-<tr>
-   <th>Token</th>
-   <th>Possible parameters</th>
-   <th>Explanation</th>
-</tr>
-<tr>
-   <td><tt>submenuentry</tt></td>
-   <td>name for the entry</td>
-   <td>Sets the name that's displayed for this entry on the submenu page. If the name should contain a space, it <i>must</i> be enclosed in quotes. Following the name, an open curly brace (<tt>{</tt>) ends the <tt>submenuentry</tt> line.</td>
-</tr>
-<tr>
-   <td><tt>loader</tt></td>
-   <td>filename</td>
-   <td>Sets the filename for the boot loader, as described in <a href="#table2">Table 2.</a></td>
-</tr>
-<tr>
-   <td><tt>initrd</tt></td>
-   <td>filename</td>
-   <td>Sets the filename for a Linux kernel's initial RAM disk (initrd), as described in <a href="#table2">Table 2.</a> If you want to eliminate the initrd specification, you should use this keyword alone, with no options. You might do this because your main entry is for a Linux kernel with EFI stub support and this submenu entry launches ELILO, which sets the initrd in its own configuration file.</td>
-</tr>
-<tr>
-   <td><tt>graphics</tt></td>
-   <td><tt>on</tt> or <tt>off</tt></td>
-   <td>Enables or disables a graphical boot mode, as described in <a href="#table2">Table 2.</a></td>
-</tr>
-<tr>
-   <td><tt>options</tt></td>
-   <td>options passed to the boot loader</td>
-   <td>Pass arbitrary options to your boot loader with this line, as described in <a href="#table2">Table 2.</a> As with <tt>initrd</tt>, you can eliminate all options by passing this keyword alone on a line.</td>
-</tr>
-<tr>
-   <td><tt>add_options</tt></td>
-   <td>options passed to the boot loader</td>
-   <td>This token works just like <tt>options</tt>, except that instead of <i>replacing</i> the default options, it causes the specified options to be <i>added to</i> those specified in the main stanza listing's <tt>options</tt> line.</td>
-</tr>
-<tr>
-   <td><tt>disabled</tt></td>
-   <td>None</td>
-   <td>Disable a submenu entry. This is often easier than commenting out an entire entry if you want to temporarily disable it.</td>
-</tr>
-</table>
-
-<p>The following menu entry illustrates the use of submenu entries. This is an expansion on the second entry presented earlier:</p>
-
-<pre class="listing">
-menuentry Gentoo {
-    loader \EFI\linux\bzImage-3.3.0-rc7
-    initrd \EFI\linux\initrd-3.3.0-rc7.img
-    options "root=/dev/sda3 ro"
-    icon \EFI\refind\icons\os_gentoo.icns
-    submenuentry "single-user mode" {
-        add_options "single"
-    }
-    submenuentry "3.3.0 final release kernel" {
-        loader \EFI\linux\bzImage-3.3.0
-        initrd \EFI\linux\initrd-3.3.0.img
-    }
-    submenuentry "boot via ELILO" {
-        loader \EFI\elilo\elilo.efi
-	initrd
-	options
-    }
-}
-</pre>
-
-<p>The main menu item for this entry won't look different with the submenus defined than without them; but if you press the Insert key, you'll see the submenu items:</p>
-
-    <br /><center><img src="manual-submenu.png" align="center" width="372"
-    height="272" alt="Manually defining submenus enables you to customize
-    your boot options." border=2></center><br />
-
-<p>The main menu item appears at the top of the list&mdash;<tt>Run bzImage-3.3.0-rc7</tt> in this example. The three submenus defined in this example's configuration file appear next, enabling you to launch in single-user mode, run the 3.3.0 release kernel, or boot via ELILO, respectively. Submenus also include an item called <tt>Return to Main Menu</tt> that does just as it says. (Alternatively, you can return to the main menu by pressing the Esc key.)</p>
-
-<p>This example illustrates some of the things you can do with submenu entries:</p>
-
-<ul>
-
-<li>You can add kernel options when booting via the EFI stub loader&mdash;to launch single-user mode, to add graphical boot options, or what have you.</li>
-
-<li>You can change kernel options when booting via the EFI stub loader&mdash;to <i>remove</i> graphical boot options, to boot to a different root device, and so on.</li>
-
-<li>You can change your kernel and/or initial RAM disk when booting via the EFI stub loader.</li>
-
-<li>You can give users a choice of boot loaders. In this example, the main option boots via the kernel stub loader, but the submenu gives users the chance to boot via ELILO instead. In fact, you could even boot two entirely different OSes from manually-defined submenu entries, although that could be confusing.</li>
-
-</ul>
-
 <hr />
 
 <p>copyright &copy; 2012 by Roderick W. Smith</p>
@@ -381,7 +282,7 @@ menuentry Gentoo {
 
 <p><a href="index.html">Go to the main rEFInd page</a></p>
 
-<p><a href="linux.html">Learn about methods of booting Linux with rEFInd</a></p>
+<p><a href="using.html">Learn about rEFInd's history</a></p>
 
   <p><a href="http://www.rodsbooks.com/">Return</a> to my main Web page.</p>
 </body>

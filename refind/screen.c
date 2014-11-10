@@ -50,6 +50,7 @@ CHAR16 *BlankLine;
 static VOID SwitchToText(IN BOOLEAN CursorEnabled);
 static VOID SwitchToGraphics(VOID);
 static VOID DrawScreenHeader(IN CHAR16 *Title);
+//static VOID PauseForKey(VOID);
 
 // UGA defines and variables
 

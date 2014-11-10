@@ -14,7 +14,7 @@
   <p class="subhead">by Roderick W. Smith, <a
 href="mailto:rodsmith@rodsbooks.com">rodsmith@rodsbooks.com</a></p>
 
-  <p>Last Web page update: 3/19/2012, referencing rEFInd 0.2.1</p>
+  <p>Last Web page update: 3/14/2012, referencing rEFInd 0.2.0</p>
 
 
 <p>I'm a technical writer and consultant specializing in Linux technologies. This Web page is provided free of charge and with no annoying outside ads; however, I did take time to prepare it, and Web hosting does cost money. If you find this Web page useful, please consider making a small donation to help keep this site up and running. Thanks!</p>
@@ -114,6 +114,10 @@ is an Apple format, and many Mac tools support it. In Linux, you can
 convert PNG images to ICNS format by using the <a
 href="http://icns.sourceforge.net/">libicns</a> library's <tt>png2icns</tt>
 program. I'm not sure what you'd use in Windows to create ICNS files.</li>
+
+<li>I'd like to improve rEFInd's ability to launch a Linux kernel with the EFI stub loader support&mdash;ideally, to auto-detect such kernels and use them sensibly. This seems difficult to do because of the problem with identifying the root filesystem, but maybe there's a solution out there....</li>
+
+<li>I want to provide a way to define sub-menus within the <tt>refind.conf</tt> file. This should be useful for selecting from among several kernels with EFI stub loader support or to customize options that are available for launching Mac OS X, among other things.</li>
 
 <li>I want to be able to specify the volume on which a boot loader resides in <tt>refind.conf</tt>. (As it is, manually-defined options can only launch boot loader files on the same volume as rEFInd.)</li>
 

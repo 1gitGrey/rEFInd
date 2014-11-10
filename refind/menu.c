@@ -240,29 +240,18 @@ VOID FreeMenu(IN REFIT_MENU_SCREEN *Screen)
         FreePool(Screen->Entries);
 }
 
-static INTN FindMenuShortcutEntry(IN REFIT_MENU_SCREEN *Screen, IN CHAR16 *Shortcut)
+static INTN FindMenuShortcutEntry(IN REFIT_MENU_SCREEN *Screen, IN CHAR16 Shortcut)
 {
     UINTN i;
-
-    if (Shortcut == NULL)
-       return (-1);
-
-    if (StrLen(Shortcut) == 1) {
-      if (Shortcut[0] >= 'a' && Shortcut[0] <= 'z')
-         Shortcut[0] -= ('a' - 'A');
-      if (Shortcut[0]) {
-         for (i = 0; i < Screen->EntryCount; i++) {
-               if (Screen->Entries[i]->ShortcutDigit == Shortcut[0] ||
-                  Screen->Entries[i]->ShortcutLetter == Shortcut[0]) {
-                  return i;
-               } // if
-         } // for
-      } // if
-    } else if (StrLen(Shortcut) > 1) {
-       for (i = 0; i < Screen->EntryCount; i++) {
-          if (StriSubCmp(Shortcut, Screen->Entries[i]->Title))
-             return i;
-       } // for
+    if (Shortcut >= 'a' && Shortcut <= 'z')
+        Shortcut -= ('a' - 'A');
+    if (Shortcut) {
+        for (i = 0; i < Screen->EntryCount; i++) {
+            if (Screen->Entries[i]->ShortcutDigit == Shortcut ||
+                Screen->Entries[i]->ShortcutLetter == Shortcut) {
+                return i;
+            }
+        }
     }
     return -1;
 }
@@ -281,7 +270,6 @@ static UINTN RunGenericMenu(IN REFIT_MENU_SCREEN *Screen, IN MENU_STYLE_FUNC Sty
     BOOLEAN HaveTimeout = FALSE;
     UINTN TimeoutCountdown = 0;
     CHAR16 *TimeoutMessage;
-    CHAR16 KeyAsString[2];
     UINTN MenuExit;
     
     if (Screen->TimeoutSeconds > 0) {
@@ -376,9 +364,7 @@ static UINTN RunGenericMenu(IN REFIT_MENU_SCREEN *Screen, IN MENU_STYLE_FUNC Sty
                 MenuExit = MENU_EXIT_DETAILS;
                 break;
             default:
-                KeyAsString[0] = key.UnicodeChar;
-                KeyAsString[1] = 0;
-                ShortcutEntry = FindMenuShortcutEntry(Screen, KeyAsString);
+                ShortcutEntry = FindMenuShortcutEntry(Screen, key.UnicodeChar);
                 if (ShortcutEntry >= 0) {
                     State.CurrentSelection = ShortcutEntry;
                     MenuExit = MENU_EXIT_ENTER;
@@ -816,9 +802,8 @@ UINTN RunMainMenu(IN REFIT_MENU_SCREEN *Screen, IN CHAR16* DefaultSelection, OUT
     UINTN DefaultEntryIndex = -1;
 
     if (DefaultSelection != NULL) {
-        // Find a menu entry whose shortcut is the first character of DefaultSelection, or
-        // whose 
-        DefaultEntryIndex = FindMenuShortcutEntry(Screen, DefaultSelection);
+        // Find a menu entry whose shortcut is the first character of DefaultSelection.
+        DefaultEntryIndex = FindMenuShortcutEntry(Screen, DefaultSelection[0]);
         // If that didn't work, should we scan more characters?  For now, no.
     }
 

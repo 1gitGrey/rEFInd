@@ -131,7 +131,6 @@ typedef struct {
    BOOLEAN          UseGraphicsMode;
    BOOLEAN          Enabled;
    CHAR16           *LoadOptions;
-   CHAR16           *InitrdPath; // Linux stub loader only
    CHAR8            OSType;
 } LOADER_ENTRY;
 
@@ -169,13 +168,12 @@ extern UINTN            VolumesCount;
 
 extern REFIT_CONFIG     GlobalConfig;
 
-LOADER_ENTRY *InitializeLoaderEntry(IN LOADER_ENTRY *Entry);
-REFIT_MENU_SCREEN *InitializeSubScreen(IN LOADER_ENTRY *Entry);
-VOID GenerateSubScreen(LOADER_ENTRY *Entry, IN REFIT_VOLUME *Volume);
+REFIT_MENU_SCREEN * GenerateSubScreen(LOADER_ENTRY *Entry, IN REFIT_VOLUME *Volume);
 LOADER_ENTRY * MakeGenericLoaderEntry(VOID);
+LOADER_ENTRY * PrepareLoaderEntry(IN CHAR16 *LoaderPath, IN CHAR16 *LoaderTitle, IN REFIT_VOLUME *Volume);
 LOADER_ENTRY * AddLoaderEntry(IN CHAR16 *LoaderPath, IN CHAR16 *LoaderTitle, IN REFIT_VOLUME *Volume);
 VOID SetLoaderDefaults(LOADER_ENTRY *Entry, CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume);
-LOADER_ENTRY * AddPreparedLoaderEntry(LOADER_ENTRY *Entry);
+LOADER_ENTRY * AddPreparedLoaderEntry(LOADER_ENTRY *Entry, REFIT_MENU_SCREEN *SubScreen);
 
 #endif
 

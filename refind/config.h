@@ -76,10 +76,6 @@ typedef struct {
 
 VOID ReadConfig(VOID);
 VOID ScanUserConfigured(VOID);
-UINTN ReadTokenLine(IN REFIT_FILE *File, OUT CHAR16 ***TokenList);
-VOID FreeTokenLine(IN OUT CHAR16 ***TokenList, IN OUT UINTN *TokenCount);
-REFIT_FILE * ReadLinuxOptionsFile(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume);
-CHAR16 * GetFirstOptionsFromFile(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume);
 
 #endif
 

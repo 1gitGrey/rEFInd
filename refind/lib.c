@@ -935,8 +935,6 @@ EFI_STATUS DirIterClose(IN OUT REFIT_DIR_ITER *DirIter)
 // file name manipulation
 //
 
-// Returns the filename portion (minus path name) of the
-// specified file
 CHAR16 * Basename(IN CHAR16 *Path)
 {
     CHAR16  *FileName;
@@ -1081,49 +1079,3 @@ CHAR16 *FindLastDirName(IN CHAR16 *Path) {
    } // if (EndOfElement > 0)
    return (Found);
 } // CHAR16 *FindLastDirName
-
-// Returns the directory portion of a pathname. For instance,
-// if FullPath is 'EFI\foo\bar.efi', this function returns the
-// string 'EFI\foo'.
-CHAR16 *FindPath(IN CHAR16* FullPath) {
-   UINTN i, LastBackslash = 0;
-   CHAR16 *PathOnly;
-
-   for (i = 0; i < StrLen(FullPath); i++) {
-      if (FullPath[i] == '\\')
-         LastBackslash = i;
-   } // for
-   PathOnly = StrDuplicate(FullPath);
-   PathOnly[LastBackslash] = 0;
-   return (PathOnly);
-}
-
-// Returns all the digits in the input string, including intervening
-// non-digit characters. For instance, if InString is "foo-3.3.4-7.img",
-// this function returns "3.3.4-7". If InString contains no digits,
-// the return value is NULL.
-CHAR16 *FindNumbers(IN CHAR16 *InString) {
-   UINTN i, StartOfElement, EndOfElement = 0, InLength, CopyLength;
-   CHAR16 *Found = NULL;
-   
-   InLength = StartOfElement = StrLen(InString);
-   // Find start & end of target element
-   for (i = 0; i < InLength; i++) {
-      if ((InString[i] >= '0') && (InString[i] <= '9')) {
-         if (StartOfElement > i)
-            StartOfElement = i;
-         if (EndOfElement < i)
-            EndOfElement = i;
-      } // if
-   } // for
-   // Extract the target element
-   if (EndOfElement > 0) {
-      if (EndOfElement >= StartOfElement) {
-         CopyLength = EndOfElement - StartOfElement + 1;
-         Found = StrDuplicate(&InString[StartOfElement]);
-         if (Found != NULL)
-            Found[CopyLength] = 0;
-      } // if (EndOfElement >= StartOfElement)
-   } // if (EndOfElement > 0)
-   return (Found);
-} // CHAR16 *FindNumbers()
