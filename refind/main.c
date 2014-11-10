@@ -74,7 +74,7 @@ static VOID AboutrEFInd(VOID)
 {
     if (AboutMenu.EntryCount == 0) {
         AboutMenu.TitleImage = BuiltinIcon(BUILTIN_ICON_FUNC_ABOUT);
-        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.2.3");
+        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.2.2");
         AddMenuInfoLine(&AboutMenu, L"");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2006-2010 Christoph Pfisterer");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2012 Roderick W. Smith");
@@ -82,7 +82,7 @@ static VOID AboutrEFInd(VOID)
         AddMenuInfoLine(&AboutMenu, L"");
         AddMenuInfoLine(&AboutMenu, L"Running on:");
         AddMenuInfoLine(&AboutMenu, PoolPrint(L" EFI Revision %d.%02d",
-                        ST->Hdr.Revision >> 16, ST->Hdr.Revision & ((1 << 16) - 1)));
+            ST->Hdr.Revision >> 16, ST->Hdr.Revision & ((1 << 16) - 1)));
 #if defined(EFI32)
         AddMenuInfoLine(&AboutMenu, L" Platform: x86 (32 bit)");
 #elif defined(EFIX64)
@@ -134,13 +134,13 @@ static EFI_STATUS StartEFIImageList(IN EFI_DEVICE_PATH **DevicePaths,
 
     // set load options
     if (LoadOptions != NULL) {
-        ReturnStatus = Status = refit_call3_wrapper(BS->HandleProtocol, ChildImageHandle, &LoadedImageProtocol, (VOID **) &ChildLoadedImage);
+      ReturnStatus = Status = refit_call3_wrapper(BS->HandleProtocol, ChildImageHandle, &LoadedImageProtocol, (VOID **) &ChildLoadedImage);
         if (CheckError(Status, L"while getting a LoadedImageProtocol handle")) {
             if (ErrorInStep != NULL)
                 *ErrorInStep = 2;
             goto bailout_unload;
         }
-
+        
         if (LoadOptionsPrefix != NULL) {
             FullLoadOptions = PoolPrint(L"%s %s ", LoadOptionsPrefix, LoadOptions);
             // NOTE: That last space is also added by the EFI shell and seems to be significant
@@ -196,11 +196,9 @@ static EFI_STATUS StartEFIImage(IN EFI_DEVICE_PATH *DevicePath,
 
 static VOID StartLoader(IN LOADER_ENTRY *Entry)
 {
-    UINTN ErrorInStep = 0;
-
     BeginExternalScreen(Entry->UseGraphicsMode, L"Booting OS");
     StartEFIImage(Entry->DevicePath, Entry->LoadOptions,
-                  Basename(Entry->LoaderPath), Basename(Entry->LoaderPath), &ErrorInStep);
+                  Basename(Entry->LoaderPath), Basename(Entry->LoaderPath), NULL);
     FinishExternalScreen();
 }
 
@@ -228,8 +226,10 @@ static CHAR16 * FindInitrd(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume) {
    while ((DirIterNext(&DirIter, 2, L"init*", &DirEntry)) && (InitrdName == NULL)) {
       InitrdVersion = FindNumbers(DirEntry->FileName);
       if (KernelVersion != NULL) {
+//         if (StriSubCmp(KernelVersion, DirEntry->FileName)) {
             if (StriCmp(InitrdVersion, KernelVersion) == 0)
                InitrdName = PoolPrint(L"%s\\%s", Path, DirEntry->FileName);
+//         } // if match found
       } else {
          if (InitrdVersion == NULL)
             InitrdName = PoolPrint(L"%s\\%s", Path, DirEntry->FileName);
@@ -300,6 +300,7 @@ REFIT_MENU_SCREEN *InitializeSubScreen(IN LOADER_ENTRY *Entry) {
          SubEntry = InitializeLoaderEntry(Entry);
          if (SubEntry != NULL) {
             SubEntry->me.Title = L"Boot using default options";
+//            SubEntry->me.Title = (Entry->OSType == 'M') ? L"Boot Mac OS X" : PoolPrint(L"Run %s", FileName);
             if ((SubEntry->InitrdPath != NULL) && (StrLen(SubEntry->InitrdPath) > 0) && (!StriSubCmp(L"initrd", SubEntry->LoadOptions))) {
                Temp = PoolPrint(L"initrd=%s", SubEntry->InitrdPath);
                MergeStrings(&SubEntry->LoadOptions, Temp, L' ');

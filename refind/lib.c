@@ -103,15 +103,15 @@ EFI_STATUS InitRefitLib(IN EFI_HANDLE ImageHandle)
 VOID UninitRefitLib(VOID)
 {
     UninitVolumes();
-
+    
     if (SelfDir != NULL) {
         refit_call1_wrapper(SelfDir->Close, SelfDir);
         SelfDir = NULL;
     }
-
+    
     if (SelfRootDir != NULL) {
-       refit_call1_wrapper(SelfRootDir->Close, SelfRootDir);
-       SelfRootDir = NULL;
+        refit_call1_wrapper(SelfRootDir->Close, SelfRootDir);
+        SelfRootDir = NULL;
     }
 }
 
@@ -119,18 +119,10 @@ VOID UninitRefitLib(VOID)
 EFI_STATUS ReinitRefitLib(VOID)
 {
     ReinitVolumes();
-
-    // Below two lines were in rEFIt, but seem to cause problems on
-    // most systems. OTOH, my Mac Mini produces (apparently harmless)
-    // errors about "(re)opening our installation volume" (see the
-    // next function) when returning from programs when these two lines
-    // are removed. On the gripping hand, the Mac SOMETIMES crashes
-    // when launching a second program even with these lines removed.
-    // TODO: Figure out cause of above weirdness and fix it more
-    // reliably!
-    /* if (SelfVolume != NULL && SelfVolume->RootDir != NULL)
-       SelfRootDir = SelfVolume->RootDir; */
-
+    
+    if (SelfVolume != NULL && SelfVolume->RootDir != NULL)
+        SelfRootDir = SelfVolume->RootDir;
+    
     return FinishInitRefitLib();
 }
 
@@ -1135,36 +1127,3 @@ CHAR16 *FindNumbers(IN CHAR16 *InString) {
    } // if (EndOfElement > 0)
    return (Found);
 } // CHAR16 *FindNumbers()
-
-// Find the #Index element (numbered from 0) in a comma-delimited string
-// of elements.
-// Returns the found element, or NULL if Index is out of range of InString
-// is NULL.
-CHAR16 *FindCommaDelimited(IN CHAR16 *InString, IN UINTN Index) {
-   UINTN    StartPos = 0, CurPos = 0;
-   BOOLEAN  Found = FALSE;
-   CHAR16   *FoundString = NULL;
-
-   if (InString != NULL) {
-      // After while() loop, StartPos marks start of item #Index
-      while ((Index > 0) && (CurPos < StrLen(InString))) {
-         if (InString[CurPos] == L',') {
-            Index--;
-            StartPos = CurPos + 1;
-         } // if
-         CurPos++;
-      } // while
-      // After while() loop, CurPos is one past the end of the element
-      while ((CurPos < StrLen(InString)) && (!Found)) {
-         if (InString[CurPos] == L',')
-            Found = TRUE;
-         else
-            CurPos++;
-      } // while
-   } // if
-   if (Index == 0)
-      FoundString = StrDuplicate(&InString[StartPos]);
-   if (FoundString != NULL)
-      FoundString[CurPos - StartPos] = 0;
-   return (FoundString);
-} // CHAR16 *FindCommaDelimited()
