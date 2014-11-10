@@ -55,7 +55,7 @@
 
 #define CONFIG_FILE_NAME        L"refind.conf"
 #define LINUX_OPTIONS_FILENAME  L"linux.conf"
-#define MAXCONFIGFILESIZE       (128*1024)
+#define MAXCONFIGFILESIZE       (1024*1024)
 
 #define ENCODING_ISO8859_1  (0)
 #define ENCODING_UTF8       (1)
@@ -423,9 +423,8 @@ static VOID AddSubmenu(LOADER_ENTRY *Entry, REFIT_FILE *File, REFIT_VOLUME *Volu
          if (SubEntry->InitrdPath != NULL)
             FreePool(SubEntry->InitrdPath);
          SubEntry->InitrdPath = NULL;
-         if (TokenCount > 1) {
+         if (TokenCount > 1)
             SubEntry->InitrdPath = StrDuplicate(TokenList[1]);
-         }
       } else if (StriCmp(TokenList[0], L"options") == 0) {
          if (SubEntry->LoadOptions != NULL)
             FreePool(SubEntry->LoadOptions);
@@ -448,9 +447,8 @@ static VOID AddSubmenu(LOADER_ENTRY *Entry, REFIT_FILE *File, REFIT_VOLUME *Volu
       FreePool(SubEntry->InitrdPath);
       SubEntry->InitrdPath = NULL;
    } // if
-   if (SubEntry->Enabled == TRUE) {
+   if (SubEntry->Enabled == TRUE)
       AddMenuEntry(SubScreen, (REFIT_MENU_ENTRY *)SubEntry);
-   }
    Entry->me.SubScreen = SubScreen;
 } // VOID AddSubmenu()
 

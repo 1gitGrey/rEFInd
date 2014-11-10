@@ -14,7 +14,7 @@
   <p class="subhead">by Roderick W. Smith, <a
 href="mailto:rodsmith@rodsbooks.com">rodsmith@rodsbooks.com</a></p>
 
-  <p>Originally written: 3/14/2012; last Web page update: 3/23/2012, referencing rEFInd 0.2.2</p>
+  <p>Last Web page update: 3/19/2012, referencing rEFInd 0.2.1</p>
 
 
 <p>I'm a technical writer and consultant specializing in Linux technologies. This Web page is provided free of charge and with no annoying outside ads; however, I did take time to prepare it, and Web hosting does cost money. If you find this Web page useful, please consider making a small donation to help keep this site up and running. Thanks!</p>
@@ -114,8 +114,6 @@ is an Apple format, and many Mac tools support it. In Linux, you can
 convert PNG images to ICNS format by using the <a
 href="http://icns.sourceforge.net/">libicns</a> library's <tt>png2icns</tt>
 program. I'm not sure what you'd use in Windows to create ICNS files.</li>
-
-<li>The code could be more flexible in its handling of the sizes of various graphical elements, and particularly drawn text. Prior to version 0.2.2, submenu text was invisible on UEFI-based PCs with 800x600 and smaller displays because of an inability to properly crop the graphics fields that hold the text. With version 0.2.2, I've put a band-aid on this problem by reducing the field size so that it now works on 800x600 displays, but smaller displays still suffer from this problem. This is just an example of the inflexibility of certain layout issues within rEFInd.</li>
 
 <li>I want to be able to specify the volume on which a boot loader resides in <tt>refind.conf</tt>. (As it is, manually-defined options can only launch boot loader files on the same volume as rEFInd.)</li>
 

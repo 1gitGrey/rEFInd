@@ -514,14 +514,11 @@ static VOID TextMenuStyle(IN REFIT_MENU_SCREEN *Screen, IN SCROLL_STATE *State, 
 // graphical generic style
 //
 
-
 static VOID DrawMenuText(IN CHAR16 *Text, IN UINTN SelectedWidth, IN UINTN XPos, IN UINTN YPos)
 {
-//    Print(L"Entering DrawMenuText(); Text is '%s', SelectedWidth is %d, XPos is %d, YPos is %d\n",
-//          Text, SelectedWidth, XPos, YPos);
     if (TextBuffer == NULL)
         TextBuffer = egCreateImage(LAYOUT_TEXT_WIDTH, TEXT_LINE_HEIGHT, FALSE);
-
+    
     egFillImage(TextBuffer, &MenuBackgroundPixel);
     if (SelectedWidth > 0) {
         // draw selection bar background
@@ -540,12 +537,12 @@ static VOID GraphicsMenuStyle(IN REFIT_MENU_SCREEN *Screen, IN SCROLL_STATE *Sta
     INTN i;
     UINTN ItemWidth;
     static UINTN MenuWidth, EntriesPosX, EntriesPosY, TimeoutPosY;
-
+    
     switch (Function) {
         
         case MENU_FUNCTION_INIT:
             InitScroll(State, Screen->EntryCount, 0);
-
+            
             // determine width of the menu
             MenuWidth = 20;  // minimum
             for (i = 0; i < (INTN)Screen->InfoLineCount; i++) {
@@ -561,14 +558,14 @@ static VOID GraphicsMenuStyle(IN REFIT_MENU_SCREEN *Screen, IN SCROLL_STATE *Sta
             MenuWidth = TEXT_XMARGIN * 2 + MenuWidth * FONT_CELL_WIDTH;
             if (MenuWidth > LAYOUT_TEXT_WIDTH)
                 MenuWidth = LAYOUT_TEXT_WIDTH;
-
+            
             if (Screen->TitleImage)
                 EntriesPosX = (UGAWidth + (Screen->TitleImage->Width + TITLEICON_SPACING) - MenuWidth) >> 1;
             else
                 EntriesPosX = (UGAWidth - MenuWidth) >> 1;
             EntriesPosY = ((UGAHeight - LAYOUT_TOTAL_HEIGHT) >> 1) + LAYOUT_BANNER_YOFFSET + TEXT_LINE_HEIGHT * 2;
             TimeoutPosY = EntriesPosY + (Screen->EntryCount + 1) * TEXT_LINE_HEIGHT;
-
+            
             // initial painting
             SwitchToGraphicsAndClear();
             egMeasureText(Screen->Title, &ItemWidth, NULL);
@@ -584,9 +581,9 @@ static VOID GraphicsMenuStyle(IN REFIT_MENU_SCREEN *Screen, IN SCROLL_STATE *Sta
                 }
                 EntriesPosY += TEXT_LINE_HEIGHT;  // also add a blank line
             }
-
+            
             break;
-
+            
         case MENU_FUNCTION_CLEANUP:
             // nothing to do
             break;
@@ -629,21 +626,16 @@ static VOID DrawMainMenuEntry(REFIT_MENU_ENTRY *Entry, BOOLEAN selected, UINTN X
 
 static VOID DrawMainMenuText(IN CHAR16 *Text, IN UINTN XPos, IN UINTN YPos)
 {
-    UINTN TextWidth, TextPosX;
-
+    UINTN TextWidth;
+    
     if (TextBuffer == NULL)
         TextBuffer = egCreateImage(LAYOUT_TEXT_WIDTH, TEXT_LINE_HEIGHT, FALSE);
-
+    
     egFillImage(TextBuffer, &MenuBackgroundPixel);
-
+    
     // render the text
     egMeasureText(Text, &TextWidth, NULL);
-    if (TextWidth > TextBuffer->Width)
-       TextPosX = 0;
-    else
-       TextPosX = (TextBuffer->Width - TextWidth) / 2;
-    egRenderText(Text, TextBuffer, TextPosX, 0);
-//    egRenderText(Text, TextBuffer, (TextBuffer->Width - TextWidth) >> 1, 0);
+    egRenderText(Text, TextBuffer, (TextBuffer->Width - TextWidth) >> 1, 0);
     BltImage(TextBuffer, XPos, YPos);
 }
 

@@ -66,7 +66,7 @@ VOID egRenderText(IN CHAR16 *Text, IN OUT EG_IMAGE *CompImage, IN UINTN PosX, IN
     TextLength = StrLen(Text);
     if (TextLength * FONT_CELL_WIDTH + PosX > CompImage->Width)
         TextLength = (CompImage->Width - PosX) / FONT_CELL_WIDTH;
-
+    
     // load the font
     if (FontImage == NULL)
         FontImage = egPrepareEmbeddedImage(&egemb_font, TRUE);

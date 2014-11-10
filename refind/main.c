@@ -74,7 +74,7 @@ static VOID AboutrEFInd(VOID)
 {
     if (AboutMenu.EntryCount == 0) {
         AboutMenu.TitleImage = BuiltinIcon(BUILTIN_ICON_FUNC_ABOUT);
-        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.2.2");
+        AddMenuInfoLine(&AboutMenu, L"rEFInd Version 0.2.1");
         AddMenuInfoLine(&AboutMenu, L"");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2006-2010 Christoph Pfisterer");
         AddMenuInfoLine(&AboutMenu, L"Copyright (c) 2012 Roderick W. Smith");
@@ -93,9 +93,6 @@ static VOID AboutrEFInd(VOID)
         AddMenuInfoLine(&AboutMenu, PoolPrint(L" Firmware: %s %d.%02d",
             ST->FirmwareVendor, ST->FirmwareRevision >> 16, ST->FirmwareRevision & ((1 << 16) - 1)));
         AddMenuInfoLine(&AboutMenu, PoolPrint(L" Screen Output: %s", egScreenDescription()));
-        AddMenuInfoLine(&AboutMenu, L"");
-        AddMenuInfoLine(&AboutMenu, L"For more information, see the rEFInd Web site:");
-        AddMenuInfoLine(&AboutMenu, L"http://www.rodsbooks.com/refind/");
         AddMenuEntry(&AboutMenu, &MenuEntryReturn);
     }
 
@@ -217,28 +214,22 @@ static CHAR16 * FindInitrd(IN CHAR16 *LoaderPath, IN REFIT_VOLUME *Volume) {
    CHAR16              *InitrdName = NULL, *FileName, *KernelVersion, *InitrdVersion, *Path;
    REFIT_DIR_ITER      DirIter;
    EFI_FILE_INFO       *DirEntry;
-
+   
    FileName = Basename(LoaderPath);
    KernelVersion = FindNumbers(FileName);
    Path = FindPath(LoaderPath);
-
+   
    DirIterOpen(Volume->RootDir, Path, &DirIter);
    while ((DirIterNext(&DirIter, 2, L"init*", &DirEntry)) && (InitrdName == NULL)) {
-      InitrdVersion = FindNumbers(DirEntry->FileName);
-      if (KernelVersion != NULL) {
-//         if (StriSubCmp(KernelVersion, DirEntry->FileName)) {
-            if (StriCmp(InitrdVersion, KernelVersion) == 0)
-               InitrdName = PoolPrint(L"%s\\%s", Path, DirEntry->FileName);
-//         } // if match found
-      } else {
-         if (InitrdVersion == NULL)
+      if (StriSubCmp(KernelVersion, DirEntry->FileName)) {
+         InitrdVersion = FindNumbers(DirEntry->FileName);
+         if (StriCmp(InitrdVersion, KernelVersion) == 0)
             InitrdName = PoolPrint(L"%s\\%s", Path, DirEntry->FileName);
-      } // if/else
-      if (InitrdVersion != NULL)
          FreePool(InitrdVersion);
+      } // if
    } // while
    DirIterClose(&DirIter);
-
+   
    // Note: Don't FreePool(FileName), since Basename returns a pointer WITHIN the string it's passed.
    FreePool(KernelVersion);
    FreePool(Path);
@@ -400,6 +391,12 @@ VOID GenerateSubScreen(LOADER_ENTRY *Entry, IN REFIT_VOLUME *Volume) {
          } // if
       } // if diagnostics entry found
 
+      
+      
+      
+      
+      
+      
    } else if (Entry->OSType == 'L') {   // entries for Linux kernels with EFI stub loaders
       File = ReadLinuxOptionsFile(Entry->LoaderPath, Volume);
       if (File != NULL) {
@@ -424,6 +421,12 @@ VOID GenerateSubScreen(LOADER_ENTRY *Entry, IN REFIT_VOLUME *Volume) {
          FreePool(File);
       } // if Linux options file exists
 
+      
+      
+      
+      
+      
+      
    } else if (Entry->OSType == 'E') {   // entries for ELILO
       SubEntry = InitializeLoaderEntry(Entry);
       if (SubEntry != NULL) {
@@ -574,7 +577,7 @@ VOID SetLoaderDefaults(LOADER_ENTRY *Entry, CHAR16 *LoaderPath, IN REFIT_VOLUME 
       Entry->me.Image = LoadOSIcon(OSIconName, L"unknown", FALSE);
 } // VOID SetLoaderDefaults()
       
-// Add a specified EFI boot loader to the list, using automatic settings
+// Add a specified EFI boot loader to the list, using automatic options
 // for icons, options, etc.
 LOADER_ENTRY * AddLoaderEntry(IN CHAR16 *LoaderPath, IN CHAR16 *LoaderTitle, IN REFIT_VOLUME *Volume) {
    LOADER_ENTRY      *Entry;
